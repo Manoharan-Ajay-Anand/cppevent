@@ -1,0 +1,3 @@
+[submodule "libs/cppevent-base"]
+	path = libs/cppevent-base
+	url = git@github.com:Manoharan-Ajay-Anand/cppevent-base.git
