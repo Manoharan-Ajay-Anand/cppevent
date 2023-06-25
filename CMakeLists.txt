@@ -8,6 +8,7 @@ project(cppevent
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcoroutines")
 
+add_subdirectory(libs/doctest)
 add_subdirectory(libs/cppevent-base)
 
 add_subdirectory(examples/timer)
