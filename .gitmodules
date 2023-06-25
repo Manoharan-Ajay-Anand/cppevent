@@ -1,3 +1,6 @@
 [submodule "libs/cppevent-base"]
 	path = libs/cppevent-base
 	url = git@github.com:Manoharan-Ajay-Anand/cppevent-base.git
+[submodule "libs/doctest"]
+	path = libs/doctest
+	url = git@github.com:doctest/doctest.git
