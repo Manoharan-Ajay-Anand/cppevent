@@ -23,7 +23,7 @@ int create_timer_fd(time_t seconds) {
 
 cppevent::task timed_coroutine(cppevent::event_loop& e_loop) {
     int t_fd = create_timer_fd(2);
-    auto& listener = *(e_loop.get_listener(t_fd));
+    auto& listener = *(e_loop.get_io_listener(t_fd));
     int count = 1;
     std::cout << "This should print every 2 seconds: " << count << std::endl;
     while (true) {
