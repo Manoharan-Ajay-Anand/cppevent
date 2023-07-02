@@ -21,16 +21,26 @@ int create_timer_fd(time_t seconds) {
     return t_fd;
 }
 
+cppevent::task signal_coroutine(cppevent::event_listener& listener) {
+    while (true) {
+        co_await cppevent::read_awaiter { listener };
+        std::cout << "Received an in-app signal" << std::endl;
+    }
+}
+
 cppevent::task timed_coroutine(cppevent::event_loop& e_loop) {
-    int t_fd = create_timer_fd(2);
+    auto& signal_listener = *(e_loop.get_signal_listener());
+    signal_coroutine(signal_listener);
+    int t_fd = create_timer_fd(3);
     auto& listener = *(e_loop.get_io_listener(t_fd));
-    int count = 1;
-    std::cout << "This should print every 2 seconds: " << count << std::endl;
+    int count = 0;
+    std::cout << "Starting timed coroutine which triggers every 3 secs" << std::endl;
     while (true) {
         std::array<std::byte, 8> buf;
         int status = read(t_fd, buf.data(), 8);
         if (status > 0) { 
-            std::cout << "This should print every 2 seconds: " << ++count << std::endl;
+            std::cout << "This should print every 3 seconds: " << ++count << std::endl;
+            e_loop.send_signal(&signal_listener, true, false);
             continue;
         }
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
