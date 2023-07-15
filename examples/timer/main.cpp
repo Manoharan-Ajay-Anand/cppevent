@@ -21,14 +21,14 @@ int create_timer_fd(time_t seconds) {
     return t_fd;
 }
 
-cppevent::task signal_coroutine(cppevent::event_listener& listener) {
+cppevent::task<void> signal_coroutine(cppevent::event_listener& listener) {
     while (true) {
         co_await cppevent::read_awaiter { listener };
         std::cout << "Received an in-app signal" << std::endl;
     }
 }
 
-cppevent::task timed_coroutine(cppevent::event_loop& e_loop) {
+cppevent::task<void> timed_coroutine(cppevent::event_loop& e_loop) {
     auto& signal_listener = *(e_loop.get_signal_listener());
     signal_coroutine(signal_listener);
     int t_fd = create_timer_fd(3);
