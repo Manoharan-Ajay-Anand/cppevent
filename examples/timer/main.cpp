@@ -1,33 +1,33 @@
 #include <iostream>
 #include <array>
 
-#include <cppevent_base/event_listener.hpp>
+#include <cppevent_base/async_queue.hpp>
 #include <cppevent_base/event_loop.hpp>
 #include <cppevent_base/task.hpp>
 #include <cppevent_base/timer.hpp>
 
 using namespace std::chrono_literals;
 
-cppevent::awaitable_task<void> signal_coroutine(cppevent::event_listener* listener) {
+cppevent::awaitable_task<void> queue_coroutine(cppevent::async_queue<int>& aq) {
     while(true) {
-        co_await cppevent::read_awaiter { *listener };
-        std::cout << "Received an in-app signal" << std::endl;
+        co_await aq.await_items();
+        std::cout << "Received item in async queue: " << aq.front() << std::endl;
+        aq.pop();
     }
 }
 
 cppevent::task timed_coroutine(cppevent::event_loop& e_loop) {
-    cppevent::event_listener* signal_listener = e_loop.get_signal_listener();
-    auto s_id = signal_listener->get_id();
-    cppevent::awaitable_task<void> t = signal_coroutine(signal_listener);
+    cppevent::async_queue<int> aq(e_loop);
+    cppevent::awaitable_task<void> t = queue_coroutine(aq);
     cppevent::timer timer(2s, e_loop);
     std::cout << "Starting timed coroutine which triggers every 2 secs 5 times" << std::endl;
     for (int i = 1; i <= 5; ++i) {
         co_await timer.wait();
         std::cout << "Timer triggered: " << i << std::endl;
-        e_loop.send_signal(s_id, true, false);
+        aq.push(i);
+        aq.push(i * 2);
     }
     co_await timer.wait();
-    signal_listener->detach();
     e_loop.stop();
 }
 
