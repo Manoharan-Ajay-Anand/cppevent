@@ -10,5 +10,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcoroutines")
 
 add_subdirectory(libs/doctest)
 add_subdirectory(libs/cppevent-base)
+add_subdirectory(libs/cppevent-net)
 
 add_subdirectory(examples/timer)
+add_subdirectory(examples/echo)
