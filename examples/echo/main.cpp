@@ -10,19 +10,12 @@
 cppevent::task serve_request(std::unique_ptr<cppevent::socket> socket) {
     const std::string newline("\r\n");
     while (true) {
-        std::string message;
-        char c = 0;
-        while (c != '\n') {
-            co_await socket->read(&c, 1, true);
-            if (c != '\r' && c != '\n') {
-                message.push_back(c);
-            }
-        }
+        std::string message = co_await socket->read_line(true);
         if (message == "close") {
             break;
         }
+        message += newline;
         co_await socket->write(message.data(), message.size());
-        co_await socket->write(newline.data(), newline.size());
         co_await socket->flush();
     }
 }
