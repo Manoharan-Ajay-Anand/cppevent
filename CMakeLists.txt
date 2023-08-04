@@ -14,3 +14,4 @@ add_subdirectory(libs/cppevent-net)
 
 add_subdirectory(examples/timer)
 add_subdirectory(examples/echo)
+add_subdirectory(examples/telnet)
