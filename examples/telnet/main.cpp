@@ -12,7 +12,7 @@ cppevent::awaitable_task<void> incoming_message(cppevent::socket& sock, cppevent
     try {
         while (true) {
             std::string message = co_await sock.read_line(true);
-            std::cout << "Server: " << message << std::endl;
+            std::cout << "remote> " << message << std::endl;
         }
     } catch (std::runtime_error error) {
         std::cout << error.what() << std::endl;
