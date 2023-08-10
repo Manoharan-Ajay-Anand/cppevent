@@ -7,3 +7,6 @@
 [submodule "libs/cppevent-net"]
 	path = libs/cppevent-net
 	url = git@github.com:Manoharan-Ajay-Anand/cppevent-net.git
+[submodule "libs/cppevent-fcgi"]
+	path = libs/cppevent-fcgi
+	url = git@github.com:Manoharan-Ajay-Anand/cppevent-fcgi.git
