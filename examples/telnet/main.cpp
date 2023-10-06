@@ -28,7 +28,6 @@ cppevent::task start_client(cppevent::client_socket client_sock, cppevent::event
 
     auto t = incoming_message(*net_sock, loop);
 
-    cppevent::set_non_blocking(STDIN_FILENO);
     cppevent::socket stdin_sock(STDIN_FILENO, loop);
 
     while (true) {
