@@ -27,6 +27,6 @@ cppevent::task on_connection(std::unique_ptr<cppevent::socket> socket) {
 int main() {
     cppevent::event_loop e_loop;
     echo_handler handler;
-    cppevent::server echo_server("localhost", "2048", e_loop, handler);
+    cppevent::server echo_server(NULL, "2048", e_loop, handler);
     e_loop.run();
 }
