@@ -1,3 +1,3 @@
-add_executable(echo EXCLUDE_FROM_ALL main.cpp)
+add_executable(echo main.cpp)
 
 target_link_libraries(echo PRIVATE cppevent-net)

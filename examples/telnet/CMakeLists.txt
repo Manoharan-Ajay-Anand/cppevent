@@ -1,3 +1,3 @@
-add_executable(telnet EXCLUDE_FROM_ALL main.cpp)
+add_executable(telnet main.cpp)
 
 target_link_libraries(telnet PRIVATE cppevent-net)
