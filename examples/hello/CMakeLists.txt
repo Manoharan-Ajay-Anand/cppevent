@@ -1,3 +1,3 @@
 add_executable(hello main.cpp)
 
-target_link_libraries(hello PRIVATE cppevent-fcgi)
+target_link_libraries(hello PRIVATE cppevent_fcgi)
