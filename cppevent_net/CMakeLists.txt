@@ -8,4 +8,4 @@ add_library(cppevent_net
 
 target_include_directories(cppevent_net PUBLIC src)
 
-target_link_libraries(cppevent_net PUBLIC cppevent_base)
+target_link_libraries(cppevent_net PRIVATE cppevent_base)

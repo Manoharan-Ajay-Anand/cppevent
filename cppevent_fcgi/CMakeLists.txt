@@ -12,4 +12,4 @@ add_library(cppevent_fcgi
 
 target_include_directories(cppevent_fcgi PUBLIC src)
 
-target_link_libraries(cppevent_fcgi PUBLIC cppevent_net)
+target_link_libraries(cppevent_fcgi PRIVATE cppevent_net cppevent_base)

@@ -10,7 +10,6 @@ add_library(cppevent_base
 )
 
 target_include_directories(cppevent_base PUBLIC src)
-target_link_libraries(cppevent_base PRIVATE uring)
 
 if (CPPEVENT_TEST)
     add_subdirectory(test)
