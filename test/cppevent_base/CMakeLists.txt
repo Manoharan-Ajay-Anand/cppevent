@@ -1,4 +1,4 @@
-add_executable(cppevent_base_test EXCLUDE_FROM_ALL
+add_executable(cppevent_base_test
     main.cpp
     byte_buffer_test.cpp
     awaiter_test.cpp

@@ -1,0 +1,3 @@
+add_subdirectory(cppevent_base)
+add_subdirectory(cppevent_net)
+add_subdirectory(cppevent_fcgi)
