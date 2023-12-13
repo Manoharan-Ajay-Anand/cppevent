@@ -17,7 +17,7 @@ int main() {
     cppevent::router routes;
     routes.get("/api/hello", hello);
     cppevent::event_loop e_loop;
-    cppevent::fcgi_server server("localhost", "9000", e_loop, routes);
+    cppevent::fcgi_server server(NULL, "9000", e_loop, routes);
     e_loop.run();
     return 0;
 }

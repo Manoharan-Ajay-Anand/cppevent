@@ -20,7 +20,11 @@ cppevent::awaitable_task<void> incoming_message(cppevent::socket& sock, cppevent
     loop.stop();
 }
 
-cppevent::task start_client(cppevent::client_socket client_sock, cppevent::event_loop& loop) {
+cppevent::task start_client(const std::string& name,
+                            const std::string& service,
+                            cppevent::event_loop& loop) {
+    cppevent::client_socket client_sock { name, service, loop };
+    
     const std::string newline("\r\n");
     std::cout << "Connecting..." << std::endl;
     std::unique_ptr<cppevent::socket> net_sock = co_await client_sock.connect();
@@ -28,7 +32,6 @@ cppevent::task start_client(cppevent::client_socket client_sock, cppevent::event
 
     auto t = incoming_message(*net_sock, loop);
 
-    cppevent::set_non_blocking(STDIN_FILENO);
     cppevent::socket stdin_sock(STDIN_FILENO, loop);
 
     while (true) {
@@ -44,7 +47,7 @@ int main() {
     std::string name, service;
     std::cout << "Enter hostname<space>port:" << std::endl;
     std::cin >> name >> service;
-    start_client(cppevent::client_socket(name, service, loop), loop);
+    start_client(name, service, loop);
     loop.run();
     return 0;
 }

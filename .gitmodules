@@ -1,12 +1,3 @@
-[submodule "libs/cppevent-base"]
-	path = libs/cppevent-base
-	url = git@github.com:Manoharan-Ajay-Anand/cppevent-base.git
 [submodule "libs/doctest"]
 	path = libs/doctest
-	url = git@github.com:doctest/doctest.git
-[submodule "libs/cppevent-net"]
-	path = libs/cppevent-net
-	url = git@github.com:Manoharan-Ajay-Anand/cppevent-net.git
-[submodule "libs/cppevent-fcgi"]
-	path = libs/cppevent-fcgi
-	url = git@github.com:Manoharan-Ajay-Anand/cppevent-fcgi.git
+	url = https://github.com/doctest/doctest.git
