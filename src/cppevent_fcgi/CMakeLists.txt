@@ -1,4 +1,4 @@
-add_library(cppevent_fcgi
+add_library(cppevent_fcgi OBJECT
     fcgi_server.cpp
     record.cpp
     request.cpp

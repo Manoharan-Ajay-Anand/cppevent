@@ -13,6 +13,14 @@ option(CPPEVENT_EXAMPLES "Build example files" OFF)
 
 add_subdirectory(src)
 
+add_library(cppevent
+  $<TARGET_OBJECTS:cppevent_base>
+  $<TARGET_OBJECTS:cppevent_net>
+  $<TARGET_OBJECTS:cppevent_fcgi>
+)
+
+target_include_directories(cppevent PUBLIC src)
+
 if (CPPEVENT_EXAMPLES)
     add_subdirectory(examples)
 endif()

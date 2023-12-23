@@ -7,6 +7,6 @@ add_executable(cppevent_base_test
 )
 
 target_link_libraries(cppevent_base_test PRIVATE
-    cppevent_base
+    cppevent
     doctest
 )

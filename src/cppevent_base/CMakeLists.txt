@@ -1,4 +1,4 @@
-add_library(cppevent_base
+add_library(cppevent_base OBJECT
   async_signal.cpp
   event_bus.cpp
   event_callback.cpp
@@ -9,4 +9,4 @@ add_library(cppevent_base
   util.cpp
 )
 
-target_include_directories(cppevent_base PUBLIC "${CMAKE_SOURCE_DIR}/src")
+target_include_directories(cppevent_base INTERFACE "${CMAKE_SOURCE_DIR}/src")
