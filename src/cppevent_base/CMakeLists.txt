@@ -8,5 +8,3 @@ add_library(cppevent_base OBJECT
   timer.cpp
   util.cpp
 )
-
-target_include_directories(cppevent_base INTERFACE "${CMAKE_SOURCE_DIR}/src")

@@ -9,5 +9,3 @@ add_library(cppevent_fcgi OBJECT
     context.cpp
     router.cpp
 )
-
-target_link_libraries(cppevent_fcgi PRIVATE cppevent_net cppevent_base)

@@ -5,5 +5,3 @@ add_library(cppevent_net OBJECT
     server.cpp
     util.cpp
 )
-
-target_link_libraries(cppevent_net PRIVATE cppevent_base)

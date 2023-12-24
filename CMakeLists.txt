@@ -19,7 +19,7 @@ add_library(cppevent
   $<TARGET_OBJECTS:cppevent_fcgi>
 )
 
-target_include_directories(cppevent PUBLIC src)
+target_include_directories(cppevent INTERFACE src)
 
 if (CPPEVENT_EXAMPLES)
     add_subdirectory(examples)
