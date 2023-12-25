@@ -26,6 +26,5 @@ if (CPPEVENT_EXAMPLES)
 endif()
 
 if (CPPEVENT_TEST)
-    add_subdirectory(libs/doctest)
     add_subdirectory(test)
 endif()
