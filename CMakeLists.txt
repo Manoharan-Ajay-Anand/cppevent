@@ -21,6 +21,11 @@ add_library(cppevent
 
 target_include_directories(cppevent INTERFACE src)
 
+install(TARGETS cppevent)
+install(DIRECTORY src/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        FILES_MATCHING PATTERN "*.hpp")
+
 if (CPPEVENT_EXAMPLES)
     add_subdirectory(examples)
 endif()
