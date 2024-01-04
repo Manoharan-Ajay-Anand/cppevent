@@ -10,7 +10,6 @@
     packages.${system}.default = pkgs.stdenv.mkDerivation {
       src = builtins.path {
         path = ./.;
-        name = "cppevent";
       };
       name = "cppevent-1.0";
       inherit system;
