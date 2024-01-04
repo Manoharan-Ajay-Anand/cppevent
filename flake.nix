@@ -14,7 +14,8 @@
       };
       name = "cppevent-1.0";
       inherit system;
-      nativeBuildInputs = [pkgs.cmake pkgs.liburing];
+      nativeBuildInputs = [pkgs.cmake];
+      buildInputs = [pkgs.liburing];
     };
   };
 }
