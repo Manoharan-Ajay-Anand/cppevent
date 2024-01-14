@@ -16,5 +16,9 @@
       nativeBuildInputs = [pkgs.cmake];
       buildInputs = [pkgs.liburing];
     };
+    devShells.${system}.default = pkgs.mkShell {
+      packages = [pkgs.cgdb];
+      inputsFrom = [self.packages.${system}.default];
+    };
   };
 }
