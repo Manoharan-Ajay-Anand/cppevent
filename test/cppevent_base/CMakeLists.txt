@@ -7,3 +7,5 @@ add_executable(cppevent_base_test
 )
 
 target_link_libraries(cppevent_base_test PRIVATE cppevent)
+
+add_test(NAME BaseTest COMMAND cppevent_base_test)

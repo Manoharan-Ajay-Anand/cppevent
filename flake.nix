@@ -14,11 +14,14 @@
       name = "cppevent-1.0";
       inherit system;
       nativeBuildInputs = [pkgs.cmake];
-      buildInputs = [pkgs.liburing];
+      buildInputs = [pkgs.liburing pkgs.doctest];
     };
     devShells.${system}.default = pkgs.mkShell {
       packages = [pkgs.cgdb];
       inputsFrom = [self.packages.${system}.default];
+      shellHook = ''
+        cmake -DCPPEVENT_DEVEL=ON -B build -S .
+      '';
     };
   };
 }
