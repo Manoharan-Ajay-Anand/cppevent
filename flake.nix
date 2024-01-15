@@ -20,7 +20,7 @@
       packages = [pkgs.cgdb];
       inputsFrom = [self.packages.${system}.default];
       shellHook = ''
-        cmake -DCPPEVENT_DEVEL=ON -B build -S .
+        cmake -DCPPEVENT_DEVEL=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -B build -S .
       '';
     };
   };
