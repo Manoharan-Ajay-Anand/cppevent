@@ -13,8 +13,8 @@
       };
       name = "cppevent-1.0";
       inherit system;
-      nativeBuildInputs = [pkgs.cmake];
-      buildInputs = [pkgs.liburing pkgs.doctest];
+      nativeBuildInputs = [pkgs.cmake pkgs.doctest];
+      buildInputs = [pkgs.liburing];
     };
     devShells.${system}.default = pkgs.mkShell {
       packages = [pkgs.cgdb];
