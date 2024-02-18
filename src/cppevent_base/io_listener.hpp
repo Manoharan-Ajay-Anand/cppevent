@@ -10,6 +10,8 @@
 
 struct io_uring;
 
+struct io_uring_sqe;
+
 struct iovec;
 
 namespace cppevent {
@@ -19,6 +21,8 @@ private:
     event_callback* const m_callback;
     io_uring* const m_ring;
     const int m_fd;
+
+    io_uring_sqe* get_sqe();
 
 public:
     io_listener(event_callback* callback, io_uring* ring, int fd);
