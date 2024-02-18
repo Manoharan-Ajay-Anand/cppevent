@@ -16,7 +16,7 @@ cppevent::signal_awaiter cppevent::output::write(const void* src, long size) {
         static_cast<uint8_t>(m_type),
         static_cast<uint16_t>(m_req_id),
         static_cast<uint16_t>(size),
-        static_cast<uint8_t>((FCGI_HEADER_LEN + size) % FCGI_HEADER_LEN)
+        static_cast<uint8_t>(size % FCGI_HEADER_LEN)
     };
     m_out_queue.push({ false, r, src, size, m_signal.get_trigger() });
     return m_signal.await_signal();
