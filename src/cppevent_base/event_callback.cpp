@@ -4,15 +4,22 @@
 
 #include <stdexcept>
 
-cppevent::event_callback::event_callback(e_id id, event_bus& bus): m_id(id), m_bus(bus) {
+cppevent::event_callback::event_callback(event_bus& bus): m_bus(bus) {
+    m_id = m_bus.register_event_callback(this);
+}
+
+cppevent::event_callback::~event_callback() {
+    m_bus.deregister_event_callback(m_id);
 }
 
 cppevent::e_id cppevent::event_callback::get_id() const {
     return m_id;
 }
 
-void cppevent::event_callback::detach() {
-    m_bus.remove_event_callback(m_id);
+std::optional<cppevent::e_status> cppevent::event_callback::get_status() {
+    auto result = m_status_opt;
+    m_status_opt.reset();
+    return result;
 }
 
 void cppevent::event_callback::set_handler(const e_handler& handler) {
@@ -27,10 +34,17 @@ void cppevent::event_callback::notify(e_status status) {
         auto handler = m_handler_opt.value();
         m_handler_opt.reset();
         handler(status);
+    } else {
+        m_status_opt = status;
     }
 }
 
 bool cppevent::status_awaiter::await_ready() {
+    auto status_opt = m_callback.get_status();
+    if (status_opt) {
+        m_status = status_opt.value();
+        return true;
+    }
     return false;
 }
 

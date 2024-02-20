@@ -10,20 +10,20 @@ TEST_CASE("event_bus test") {
     cppevent::event_bus bus;
 
     SUBCASE("status update") {
-        cppevent::event_callback* cb = bus.get_event_callback();
-        cb->set_handler([&status](cppevent::e_status s) {
+        cppevent::event_callback cb { bus };
+        cb.set_handler([&status](cppevent::e_status s) {
             status = s;
         });
-        bus.notify(cb->get_id(), SAMPLE_NUM);
+        bus.notify(cb.get_id(), SAMPLE_NUM);
         CHECK_EQ(status, SAMPLE_NUM);
     }
 
     SUBCASE("no status update") {
-        cppevent::event_callback* cb = bus.get_event_callback();
-        cb->set_handler([&status](cppevent::e_status s) {
+        cppevent::event_callback cb { bus };
+        cb.set_handler([&status](cppevent::e_status s) {
             status = s;
         });
-        bus.notify(cb->get_id() * 10, SAMPLE_NUM);
+        bus.notify(cb.get_id() * 10, SAMPLE_NUM);
         CHECK_EQ(status, 0);
     }
 }

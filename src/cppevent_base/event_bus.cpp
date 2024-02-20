@@ -1,24 +1,22 @@
 #include "event_bus.hpp"
 
+#include "event_callback.hpp"
+
 #include <utility>
 
-cppevent::event_callback* cppevent::event_bus::get_event_callback() {
+cppevent::e_id cppevent::event_bus::register_event_callback(event_callback* callback) {
     e_id id = ++m_id_counter;
-    auto p = m_callbacks.try_emplace(id, id, *this);
-    return &(p.first->second);
+    m_callbacks[id] = callback;
+    return id;
 }
 
-void cppevent::event_bus::remove_event_callback(e_id id) {
-    m_marked_deletion.push(id);
+void cppevent::event_bus::deregister_event_callback(e_id id) {
+    m_callbacks.erase(id);
 }
 
 void cppevent::event_bus::notify(e_id id, e_status status) {
     auto it = m_callbacks.find(id);
     if (it != m_callbacks.end()) {
-        (it->second).notify(status);
-    }
-    while (!m_marked_deletion.empty()) {
-        m_callbacks.erase(m_marked_deletion.front());
-        m_marked_deletion.pop();
+        (it->second)->notify(status);
     }
 }

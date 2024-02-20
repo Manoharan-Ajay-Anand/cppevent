@@ -38,7 +38,7 @@ cppevent::awaitable_task<long> cppevent::socket::read(void* dest, long size, boo
     std::byte* dest_p = static_cast<std::byte*>(dest);
     long total = 0;
     while (!read_buf(dest_p, size, total, m_in_buffer)) {
-        e_status status = co_await m_read_listener->read_to_buf(m_in_buffer);
+        e_status status = co_await read_io_to_buf(*m_read_listener, m_in_buffer);
         if (status == 0) {
             break;
         } else if (status < 0) {
@@ -79,7 +79,7 @@ cppevent::awaitable_task<std::string> cppevent::socket::read_line(bool read_full
     char last_char = '\0';
     bool line_ended = false;
     while (!read_line_buf(result, last_char, line_ended, m_in_buffer)) {
-        e_status status = co_await m_read_listener->read_to_buf(m_in_buffer);
+        e_status status = co_await read_io_to_buf(*m_read_listener, m_in_buffer);
         if (status == 0) {
             break;
         } else if (status < 0) {
@@ -104,7 +104,7 @@ bool skip_buf(long& size, long& total, cppevent::byte_buffer<BUFFER_SIZE>& buf) 
 cppevent::awaitable_task<long> cppevent::socket::skip(long size, bool skip_fully) {
     long total = 0;
     while (!skip_buf(size, total, m_in_buffer)) {
-        e_status status = co_await m_read_listener->read_to_buf(m_in_buffer);
+        e_status status = co_await read_io_to_buf(*m_read_listener, m_in_buffer);
         if (status == 0) {
             break;
         } else if (status < 0) {
@@ -128,7 +128,7 @@ bool write_buf(const std::byte*& src, long& size, cppevent::byte_buffer<BUFFER_S
 cppevent::awaitable_task<void> cppevent::socket::write(const void* src, long size) {
     const std::byte* src_p = static_cast<const std::byte*>(src);
     while (!write_buf(src_p, size, m_out_buffer)) {
-        e_status status = co_await m_write_listener->write_from_buf(m_out_buffer);
+        e_status status = co_await write_io_from_buf(*m_write_listener, m_out_buffer);
         if (status < 0) {
             throw_error("socket write failed: ", 0 - status);
         }
@@ -137,7 +137,7 @@ cppevent::awaitable_task<void> cppevent::socket::write(const void* src, long siz
 
 cppevent::awaitable_task<void> cppevent::socket::flush() {
     while (m_out_buffer.available() > 0) {
-        e_status status = co_await m_write_listener->write_from_buf(m_out_buffer);
+        e_status status = co_await write_io_from_buf(*m_write_listener, m_out_buffer);
         if (status < 0) {
             throw_error("socket write failed: ", 0 - status);
         }

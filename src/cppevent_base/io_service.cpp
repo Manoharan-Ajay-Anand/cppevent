@@ -2,7 +2,7 @@
 
 #include "util.hpp"
 #include "io_listener.hpp"
-#include "event_bus.hpp"
+#include "event_callback.hpp"
 
 cppevent::io_service::io_service() {
     int status = io_uring_queue_init(1024, &m_ring, 0);
@@ -15,7 +15,7 @@ cppevent::io_service::~io_service() {
 
 std::unique_ptr<cppevent::io_listener> cppevent::io_service::get_listener(int fd,
                                                                           event_bus& bus) {
-    return std::make_unique<io_listener>(bus.get_event_callback(), &m_ring, fd);
+    return std::make_unique<io_listener>(bus, &m_ring, fd);
 }
 
 cppevent::e_event cppevent::io_service::poll() {

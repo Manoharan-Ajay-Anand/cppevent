@@ -1,6 +1,7 @@
 #include "event_loop.hpp"
 
 #include "io_listener.hpp"
+#include "event_callback.hpp"
 #include "util.hpp"
 
 #include <array>
@@ -25,8 +26,8 @@ std::unique_ptr<cppevent::io_listener> cppevent::event_loop::get_io_listener(int
     return m_io_service.get_listener(fd, m_event_bus);
 }
 
-cppevent::event_callback* cppevent::event_loop::get_event_callback() {
-    return m_event_bus.get_event_callback();
+cppevent::event_callback cppevent::event_loop::get_event_callback() {
+    return event_callback { m_event_bus };
 }
 
 void cppevent::event_loop::trigger_event_fd() {

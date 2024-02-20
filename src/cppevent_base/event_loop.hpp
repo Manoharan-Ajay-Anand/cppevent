@@ -34,7 +34,7 @@ public:
     ~event_loop();
 
     std::unique_ptr<io_listener> get_io_listener(int fd);
-    event_callback* get_event_callback();
+    event_callback get_event_callback();
     
     void add_event(e_event ev);
     void add_op(const std::function<void()>& op);

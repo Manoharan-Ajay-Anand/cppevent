@@ -21,9 +21,9 @@ private:
 public:
     output(int req_id, int type, output_queue& out_queue, event_loop& loop);
 
-    signal_awaiter write(const void* src, long size);
-    signal_awaiter write(std::string_view s);
-    signal_awaiter end();
+    status_awaiter write(const void* src, long size);
+    status_awaiter write(std::string_view s);
+    status_awaiter end();
 };
 
 }
