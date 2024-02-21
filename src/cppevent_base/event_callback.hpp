@@ -14,7 +14,6 @@ class event_callback {
 private:
     e_id m_id;
     event_bus& m_bus;
-    std::optional<e_status> m_status_opt;
     std::optional<e_handler> m_handler_opt;
 public:
     event_callback(event_bus& bus);
@@ -28,15 +27,15 @@ public:
 
     e_id get_id() const;
 
-    std::optional<e_status> get_status();
-
     void set_handler(const e_handler& handler);
     void notify(e_status status);
 };
 
 struct status_awaiter {
-    event_callback& m_callback;
-    e_status m_status = 0;
+    std::optional<e_status> m_status_opt;
+    std::coroutine_handle<> m_handle;
+
+    status_awaiter(event_callback& callback);
 
     bool await_ready();
 
