@@ -22,7 +22,6 @@ private:
     std::unique_ptr<io_listener> m_write_listener;
     byte_buffer<SOCKET_BUFFER_SIZE> m_in_buffer;
     byte_buffer<SOCKET_BUFFER_SIZE> m_out_buffer;
-    OP_STATUS m_status;
 
 public:
     socket(int fd, std::unique_ptr<io_listener>&& read_l,

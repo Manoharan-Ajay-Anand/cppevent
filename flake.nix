@@ -17,10 +17,10 @@
       buildInputs = [pkgs.liburing];
     };
     devShells.${system}.default = pkgs.mkShell {
-      packages = [pkgs.cgdb];
+      packages = [pkgs.gdb];
       inputsFrom = [self.packages.${system}.default];
       shellHook = ''
-        cmake -DCPPEVENT_DEVEL=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -B build -S .
+        cmake -DCMAKE_BUILD_TYPE=Debug -DCPPEVENT_DEVEL=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -B build -S .
       '';
     };
   };
