@@ -154,30 +154,6 @@ public:
     }
 };
 
-template<long BUFFER_SIZE>
-inline bool can_read_buffer(io_chunk& chunk, byte_buffer<BUFFER_SIZE>& buffer) {
-    chunk = buffer.get_read_chunk();
-    return chunk.m_size > 0;
-}
-
-template<long BUFFER_SIZE>
-inline bool can_read_buffer(io_chunk_group& group, byte_buffer<BUFFER_SIZE>& buffer) {
-    group = buffer.get_read_chunks();
-    return group.m_count > 0;
-}
-
-template<long BUFFER_SIZE>
-inline bool can_write_buffer(io_chunk& chunk, byte_buffer<BUFFER_SIZE>& buffer) {
-    chunk = buffer.get_write_chunk();
-    return chunk.m_size > 0;
-}
-
-template<long BUFFER_SIZE>
-inline bool can_write_buffer(io_chunk_group& group, byte_buffer<BUFFER_SIZE>& buffer) {
-    group = buffer.get_write_chunks();
-    return group.m_count > 0;
-}
-
 }
 
 #endif
