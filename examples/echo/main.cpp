@@ -9,16 +9,21 @@
 
 class echo_handler : public cppevent::connection_handler {
 public:
-cppevent::task on_connection(std::unique_ptr<cppevent::socket> socket) {
+cppevent::task on_connection(std::unique_ptr<cppevent::socket> sock) {
     const std::string newline("\r\n");
     while (true) {
-        std::string message = co_await socket->read_line(true);
+        std::string message;
+        for (int i = co_await sock->read_c(true); i != '\n'; i = co_await sock->read_c(true)) {
+            if (i != '\r') {
+                message.push_back(static_cast<char>(i));
+            }
+        }
         if (message == "close") {
             break;
         }
         message += newline;
-        co_await socket->write(message.data(), message.size());
-        co_await socket->flush();
+        co_await sock->write(message.data(), message.size());
+        co_await sock->flush();
     }
 }
 

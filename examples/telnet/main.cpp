@@ -8,10 +8,20 @@
 #include <cppevent_net/socket.hpp>
 #include <cppevent_net/util.hpp>
 
+cppevent::awaitable_task<std::string> read_line(cppevent::socket& sock) {
+    std::string result;
+    for (int i = co_await sock.read_c(true); i != '\n'; i = co_await sock.read_c(true)) {
+        if (i != '\r') {
+            result.push_back(static_cast<char>(i));
+        }
+    }
+    co_return result;
+}
+
 cppevent::awaitable_task<void> incoming_message(cppevent::socket& sock, cppevent::event_loop& loop) {
     try {
         while (true) {
-            std::string message = co_await sock.read_line(true);
+            std::string message = co_await read_line(sock);
             std::cout << "remote> " << message << std::endl;
         }
     } catch (std::runtime_error error) {
@@ -35,7 +45,7 @@ cppevent::task start_client(const std::string& name,
     cppevent::socket stdin_sock(STDIN_FILENO, loop);
 
     while (true) {
-        std::string message = co_await stdin_sock.read_line(true);
+        std::string message = co_await read_line(stdin_sock);
         message += newline;
         co_await net_sock->write(message.data(), message.size());
         co_await net_sock->flush();

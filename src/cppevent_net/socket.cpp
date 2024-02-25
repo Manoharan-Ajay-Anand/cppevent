@@ -48,45 +48,20 @@ cppevent::awaitable_task<long> cppevent::socket::read(void* dest, long size, boo
     co_return total;
 }
 
-template<long BUFFER_SIZE>
-bool read_line_buf(std::string& result, char& last_char,
-                   bool& line_ended, cppevent::byte_buffer<BUFFER_SIZE>& buf) {
-    cppevent::io_chunk chunk;
-    while (!line_ended && can_read_buffer(chunk, buf)) {
-        long p = 0;
-        for (; p < chunk.m_size && !line_ended; ++p) {
-            char c = *(reinterpret_cast<char*>(chunk.m_ptr + p));
-            bool is_newline = c == '\n';
-            if (is_newline || last_char == '\r') {
-                line_ended = true;
-                p += is_newline;
-                break;
-            } else if (c != '\r') {
-                result.push_back(c);
-            }
-            last_char = c;
-        }
-        buf.increment_read_p(p);
-    }
-    return line_ended;
-}
+cppevent::awaitable_task<int> cppevent::socket::read_c(bool read_fully) {
+    int i = m_in_buffer.read_c();
 
-cppevent::awaitable_task<std::string> cppevent::socket::read_line(bool read_fully) {
-    std::string result;
-    char last_char = '\0';
-    bool line_ended = false;
-    while (!read_line_buf(result, last_char, line_ended, m_in_buffer)) {
+    if (i < 0) {
         e_status status = co_await read_io_to_buf(*m_read_listener, m_in_buffer);
-        if (status == 0) {
-            break;
-        } else if (status < 0) {
-            throw_error("socket read_line failed: ", 0 - status);
+        if (status < 0) {
+            throw_error("socket read_c failed: ", 0 - status);
+        } else if (status == 0 && read_fully) {
+            throw std::runtime_error("socket read_c failed: socket closed");
         }
+        i = m_in_buffer.read_c();
     }
-    if (read_fully && !line_ended) {
-        throw std::runtime_error("socket read_line failed: socket closed");
-    }
-    co_return std::move(result);
+    
+    co_return i;
 }
 
 cppevent::awaitable_task<long> cppevent::socket::skip(long size, bool skip_fully) {

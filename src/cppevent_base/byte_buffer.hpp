@@ -125,6 +125,15 @@ public:
         return read(static_cast<std::byte*>(dest), size);
     }
 
+    int read_c() {
+        if (available() == 0) {
+            return -1;
+        }
+        int i = std::to_integer<int>(*get_ptr(m_start));
+        increment_read_p(1);
+        return i;
+    }
+
     long write(const std::byte* src, long size) {
         long size_written = 0;
         auto write_group = get_write_chunks();
