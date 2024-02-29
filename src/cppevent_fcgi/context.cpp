@@ -5,14 +5,12 @@
 constexpr std::string_view GET_STR = "GET";
 constexpr std::string_view POST_STR = "POST";
 
-constexpr std::string_view DOCUMENT_URI_STR = "DOCUMENT_URI";
+constexpr std::string_view REQUEST_URI_STR = "REQUEST_URI";
 
 constexpr std::string_view CONTENT_LENGTH_STR = "CONTENT_LENGTH";
 constexpr std::string_view CONTENT_TYPE_STR = "CONTENT_TYPE";
 
 constexpr std::string_view REQUEST_METHOD_STR = "REQUEST_METHOD";
-
-constexpr std::string_view QUERY_STRING_STR = "QUERY_STRING";
 
 const std::unordered_map<std::string_view, cppevent::REQUEST_METHOD> method_map = {
     { GET_STR, cppevent::REQUEST_METHOD::GET },
@@ -21,7 +19,18 @@ const std::unordered_map<std::string_view, cppevent::REQUEST_METHOD> method_map 
 
 cppevent::context::context(const std::unordered_map<std::string_view,
                                                     std::string_view>& params): m_params(params) {
-    m_path = m_params.at(DOCUMENT_URI_STR);
+    std::string_view request_uri = m_params.at(REQUEST_URI_STR);
+    std::size_t query_pos = 0;
+    for (; query_pos < request_uri.size(); ++query_pos) {
+        if (request_uri[query_pos] == '?') {
+            break;
+        }
+    }
+    m_path = request_uri.substr(0, query_pos);
+    if (query_pos < request_uri.size()) {
+        set_query_params(request_uri.substr(query_pos + 1));
+    }
+    
     m_req_method = method_map.at(m_params.at(REQUEST_METHOD_STR));
     m_content_length = 0;
 
@@ -33,11 +42,6 @@ cppevent::context::context(const std::unordered_map<std::string_view,
     auto len_it = m_params.find(CONTENT_LENGTH_STR);
     if (len_it != m_params.end()) {
         m_content_length = std::stol(std::string { len_it->second });
-    }
-
-    auto query_it = m_params.find(QUERY_STRING_STR);
-    if (query_it != m_params.end()) {
-        set_query_params(query_it->second);
     }
 }
 
