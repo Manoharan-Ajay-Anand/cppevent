@@ -13,5 +13,5 @@ cppevent::signal_trigger cppevent::async_signal::get_trigger() {
 }
 
 cppevent::status_awaiter cppevent::async_signal::await_signal() {
-    return { m_callback };
+    return m_callback.await_status();
 }

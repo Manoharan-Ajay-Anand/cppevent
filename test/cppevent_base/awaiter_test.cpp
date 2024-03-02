@@ -8,7 +8,7 @@
 #define MULTIPLIER 2
 
 cppevent::task multiply_num(int& num, cppevent::event_callback& cb) {
-    num *= co_await cppevent::status_awaiter { cb };
+    num *= co_await cb.await_status();
 }
 
 TEST_CASE("awaiters test") {

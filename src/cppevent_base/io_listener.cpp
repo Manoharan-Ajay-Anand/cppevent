@@ -18,7 +18,7 @@ io_uring_sqe* cppevent::io_listener::get_sqe() {
 }
 
 cppevent::status_awaiter cppevent::io_listener::get_status_awaiter() {
-    return { m_callback };
+    return m_callback.await_status();
 }
 
 cppevent::status_awaiter cppevent::io_listener::on_accept(sockaddr* addr, socklen_t* len) {

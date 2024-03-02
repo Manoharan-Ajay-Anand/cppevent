@@ -5,6 +5,7 @@ add_library(cppevent_base OBJECT
   event_loop.cpp
   io_listener.cpp
   io_service.cpp
+  status_awaiter.cpp
   timer.cpp
   util.cpp
 )
