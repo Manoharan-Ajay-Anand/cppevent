@@ -5,6 +5,7 @@
 
 #include <optional>
 #include <coroutine>
+#include <memory>
 
 namespace cppevent {
 
@@ -31,9 +32,21 @@ public:
     void notify(e_status status);
 };
 
-struct status_awaiter {
+struct status_store {
     std::optional<e_status> m_status_opt;
     std::coroutine_handle<> m_handle;
+
+    status_store(event_callback& callback);
+
+    status_store(const status_store&) = delete;
+    status_store& operator=(const status_store&) = delete;
+
+    status_store(status_store&&) = delete;
+    status_store& operator=(status_store&&) = delete;
+};
+
+struct status_awaiter {
+    std::unique_ptr<status_store> m_store;
 
     status_awaiter(event_callback& callback);
 
