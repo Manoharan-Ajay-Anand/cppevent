@@ -35,8 +35,9 @@ cppevent::server_socket::server_socket(const char* name,
 
 cppevent::server_socket::server_socket(const char* unix_path,
                                        event_loop& loop): m_loop(loop) {
-    int status = unlink(unix_path);
-    throw_if_error(status, "server_socket failed to unlink unix path: ");
+    if (::access(unix_path, F_OK) == 0) {
+        throw_if_error(unlink(unix_path), "server_socket failed to unlink unix path: ");
+    }
 
     m_fd = ::socket(AF_UNIX, SOCK_STREAM, 0);
     throw_if_error(m_fd, "server_socket failed to create socket: ");
@@ -46,7 +47,7 @@ cppevent::server_socket::server_socket(const char* unix_path,
     addr.sun_family = AF_UNIX;
     std::strcpy(addr.sun_path, unix_path);
 
-    status = ::bind(m_fd, reinterpret_cast<const sockaddr*>(&addr), sizeof(addr));
+    int status = ::bind(m_fd, reinterpret_cast<const sockaddr*>(&addr), sizeof(addr));
     throw_if_error(status, "server_socket bind failed: ");
 
     status = ::listen(m_fd, 5);
