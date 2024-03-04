@@ -9,6 +9,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <netdb.h>
 #include <unistd.h>
 
@@ -32,11 +33,26 @@ cppevent::server_socket::server_socket(const char* name,
     ::freeaddrinfo(res);
 }
 
-cppevent::server_socket::server_socket(const std::string& name,
-                                       const std::string& service,
-                                       event_loop& loop): server_socket(name.c_str(),
-                                                                        service.c_str(),
-                                                                        loop) {
+cppevent::server_socket::server_socket(const char* unix_path,
+                                       event_loop& loop): m_loop(loop) {
+    int status = unlink(unix_path);
+    throw_if_error(status, "server_socket failed to unlink unix path: ");
+
+    m_fd = ::socket(AF_UNIX, SOCK_STREAM, 0);
+    throw_if_error(m_fd, "server_socket failed to create socket: ");
+
+    ::sockaddr_un addr {};
+
+    addr.sun_family = AF_UNIX;
+    std::strcpy(addr.sun_path, unix_path);
+
+    status = ::bind(m_fd, reinterpret_cast<const sockaddr*>(&addr), sizeof(addr));
+    throw_if_error(status, "server_socket bind failed: ");
+
+    status = ::listen(m_fd, 5);
+    throw_if_error(status, "server_socket listen failed: ");
+
+    m_listener = loop.get_io_listener(m_fd);
 }
 
 cppevent::server_socket::~server_socket() {

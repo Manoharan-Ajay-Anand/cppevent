@@ -31,7 +31,7 @@ private:
                                   std::unordered_map<int, request>& requests);
 public:
     fcgi_server(const char* name, const char* service, event_loop& loop, router& router);
-    fcgi_server(const std::string& name, const std::string& service, event_loop& loop, router& router);
+    fcgi_server(const char* unix_path, event_loop& loop, router& router);
 
     task on_connection(std::unique_ptr<socket> sock);
 };

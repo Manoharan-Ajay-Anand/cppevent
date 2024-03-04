@@ -27,8 +27,7 @@ private:
     task accept_connections();
 public:
     server(const char* name, const char* service, event_loop& loop, connection_handler& handler);
-    server(const std::string& name, const std::string& service,
-           event_loop& loop, connection_handler& handler);
+    server(const char* unix_path, event_loop& loop, connection_handler& handler);
 };
 
 }

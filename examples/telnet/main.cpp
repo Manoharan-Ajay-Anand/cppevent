@@ -33,7 +33,7 @@ cppevent::awaitable_task<void> incoming_message(cppevent::socket& sock, cppevent
 cppevent::task start_client(const std::string& name,
                             const std::string& service,
                             cppevent::event_loop& loop) {
-    cppevent::client_socket client_sock { name, service, loop };
+    cppevent::client_socket client_sock { name.c_str(), service.c_str(), loop };
     
     const std::string newline("\r\n");
     std::cout << "Connecting..." << std::endl;

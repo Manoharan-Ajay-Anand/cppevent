@@ -12,14 +12,11 @@ cppevent::server::server(const char* name,
     accept_connections();
 }
 
-cppevent::server::server(const std::string& name,
-                         const std::string& service,
+cppevent::server::server(const char* unix_path,
                          event_loop& loop,
-                         connection_handler& handler): server(name.c_str(),
-                                                              service.c_str(),
-                                                              loop,
-                                                              handler) {
-
+                         connection_handler& handler): m_socket(unix_path, loop), 
+                                                       m_handler(handler) {
+    accept_connections();
 }
 
 cppevent::task cppevent::server::accept_connections() {

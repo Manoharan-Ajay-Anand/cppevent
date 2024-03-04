@@ -21,7 +21,7 @@ private:
     std::unique_ptr<io_listener> m_listener;
 public:
     server_socket(const char* name, const char* service, event_loop& loop);
-    server_socket(const std::string& name, const std::string& service, event_loop& loop);
+    server_socket(const char* unix_path, event_loop& loop);
     ~server_socket();
 
     awaitable_task<std::unique_ptr<socket>> accept();

@@ -20,14 +20,11 @@ cppevent::fcgi_server::fcgi_server(const char* name,
 
 }
 
-cppevent::fcgi_server::fcgi_server(const std::string& name,
-                                   const std::string& service,
+cppevent::fcgi_server::fcgi_server(const char* unix_path,
                                    event_loop& loop,
-                                   router& router): fcgi_server(name.c_str(), 
-                                                                service.c_str(),
-                                                                loop,
-                                                                router) {
-
+                                   router& router): m_loop(loop),
+                                                    m_handler(router),
+                                                    m_server(unix_path, loop, *this) {
 }
 
 cppevent::awaitable_task<void> cppevent::fcgi_server::write_res(socket& sock,
