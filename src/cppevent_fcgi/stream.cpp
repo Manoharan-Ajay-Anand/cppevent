@@ -34,6 +34,21 @@ cppevent::awaitable_task<long> cppevent::stream::read(void* dest, long size, boo
     co_return total;
 }
 
+cppevent::awaitable_task<long> cppevent::stream::read(std::string& dest, long size, bool read_fully) {
+    long total = 0;
+    while (size > 0 && (co_await can_read())) {
+        long to_read = std::min(size, m_remaining);
+        co_await m_conn.read(dest, to_read, true);
+        total += to_read;
+        size -= to_read;
+        m_remaining -= to_read;
+    }
+    if (read_fully && size > 0) {
+        throw std::runtime_error("FastCGI stream read error: stream closed");
+    }
+    co_return total;
+}
+
 cppevent::awaitable_task<long> cppevent::stream::skip(long size, bool skip_fully) {
     long total = 0;
     while (size > 0 && (co_await can_read())) {

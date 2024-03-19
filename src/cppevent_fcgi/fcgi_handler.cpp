@@ -8,6 +8,7 @@
 #include <cppevent_base/util.hpp>
 
 #include <cstdint>
+#include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -17,7 +18,20 @@
 cppevent::fcgi_handler::fcgi_handler(router& r): m_router(r) {    
 }
 
-cppevent::awaitable_task<std::pair<long, long>> get_lengths(cppevent::stream& s) {
+namespace cppevent {
+
+struct header_len {
+    long m_name_len;
+    long m_val_len;
+
+    long get_total_len() const {
+        return m_name_len + m_val_len;
+    }
+};
+
+}
+
+cppevent::awaitable_task<cppevent::header_len> get_lengths(cppevent::stream& s) {
     long result[2];
     uint8_t data[4];
     for (int i = 0; i < 2; ++i) {
@@ -36,20 +50,24 @@ cppevent::awaitable_task<std::pair<long, long>> get_lengths(cppevent::stream& s)
 cppevent::awaitable_task<void> get_headers(cppevent::stream& s_params,
                                            std::unordered_map<std::string_view,
                                                               std::string_view>& header_map,
-                                           std::vector<std::unique_ptr<char[]>>& header_buf) {
+                                           std::string& header_buf) {
+    std::vector<cppevent::header_len> header_lens;
     while ((co_await s_params.can_read())) {
-        auto [name_l, val_l] = co_await get_lengths(s_params);
-        long total_l = name_l + val_l;
-        if (val_l == 0) {
-            co_await s_params.skip(total_l, true);
+        auto header_l = co_await get_lengths(s_params);
+        long total_len = header_l.get_total_len();
+        if (header_l.m_val_len == 0) {
+            co_await s_params.skip(total_len, true);
             continue;
         }
-        char* data = new char[total_l];
-        co_await s_params.read(data, total_l, true);
-        std::string_view name = { data, static_cast<std::size_t>(name_l) };
-        std::string_view value = { data + name_l, static_cast<std::size_t>(val_l) };
+        co_await s_params.read(header_buf, total_len, true);
+        header_lens.push_back(header_l);
+    }
+    const char* p = header_buf.data();
+    for (auto h_len : header_lens) {
+        std::string_view name = { p, static_cast<std::size_t>(h_len.m_name_len) };
+        std::string_view value = { p + h_len.m_name_len, static_cast<std::size_t>(h_len.m_val_len) };
         header_map[name] = value;
-        header_buf.push_back(std::unique_ptr<char[]>{ data });
+        p += h_len.get_total_len();
     }
 }
 
@@ -60,7 +78,7 @@ cppevent::awaitable_task<void> cppevent::fcgi_handler::handle_request(stream& s_
                                                                       output_queue& o_queue,
                                                                       bool close_conn) {
     std::unordered_map<std::string_view, std::string_view> header_map;
-    std::vector<std::unique_ptr<char[]>> header_buf;
+    std::string header_buf;
     co_await get_headers(s_params, header_map, header_buf);
     context cont { std::move(header_map) };
     

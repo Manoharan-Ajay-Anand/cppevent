@@ -30,6 +30,7 @@ public:
     ~socket();
 
     awaitable_task<long> read(void* dest, long size, bool read_fully);
+    awaitable_task<long> read(std::string& dest, long size, bool read_fully);
     awaitable_task<int> read_c(bool read_fully);
     awaitable_task<long> skip(long size, bool skip_fully);
 
