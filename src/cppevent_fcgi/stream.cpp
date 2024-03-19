@@ -20,7 +20,10 @@ cppevent::stream_readable_awaiter cppevent::stream::can_read() {
 cppevent::awaitable_task<long> cppevent::stream::read(void* dest, long size, bool read_fully) {
     std::byte* dest_ptr = static_cast<std::byte*>(dest);
     long total = 0;
-    while (size > 0 && (co_await can_read())) {
+    while (size > 0) {
+        if (!(co_await can_read())) {
+            break;
+        }
         long to_read = std::min(size, m_remaining);
         co_await m_conn.read(dest_ptr, to_read, true);
         dest_ptr += to_read;
@@ -36,7 +39,10 @@ cppevent::awaitable_task<long> cppevent::stream::read(void* dest, long size, boo
 
 cppevent::awaitable_task<long> cppevent::stream::read(std::string& dest, long size, bool read_fully) {
     long total = 0;
-    while (size > 0 && (co_await can_read())) {
+    while (size > 0) {
+        if (!(co_await can_read())) {
+            break;
+        }
         long to_read = std::min(size, m_remaining);
         co_await m_conn.read(dest, to_read, true);
         total += to_read;

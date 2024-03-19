@@ -48,17 +48,16 @@ cppevent::awaitable_task<long> cppevent::socket::read(void* dest, long size, boo
     co_return total;
 }
 
+
+
 cppevent::awaitable_task<long> cppevent::socket::read(std::string& dest, long size, bool read_fully) {
     e_status status;
     long total = 0;
 
     do {
-        auto chunk = m_in_buffer.get_read_chunk();
-        long transferred = std::min(chunk.m_size, size);
-        dest.append(reinterpret_cast<char*>(chunk.m_ptr), transferred);
+        long transferred = m_in_buffer.read(dest, size);
         size -= transferred;
         total += transferred;
-        m_in_buffer.increment_read_p(transferred);
         if (size > 0) {
             status = co_await read_io_to_buf(*m_read_listener, m_in_buffer);
         }

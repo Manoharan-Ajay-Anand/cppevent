@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <array>
+#include <string>
 #include <cstddef>
 #include <cstring>
 
@@ -123,6 +124,20 @@ public:
 
     long read(void* dest, long size) {
         return read(static_cast<std::byte*>(dest), size);
+    }
+
+    long read(std::string& dest, long size) {
+        long size_read = 0;
+        auto read_group = get_read_chunks();
+        for (int i = 0; i < read_group.m_count && size > 0; ++i) {
+            io_chunk chunk = read_group.m_chunks[i];
+            long size_to_read = std::min(chunk.m_size, size);
+            dest.append(reinterpret_cast<char*>(chunk.m_ptr), size_to_read);
+            size -= size_to_read;
+            size_read += size_to_read;
+        }
+        increment_read_p(size_read);
+        return size_read;
     }
 
     int read_c() {
