@@ -21,9 +21,10 @@ add_library(cppevent
 
 target_include_directories(cppevent INTERFACE src)
 
-include(CTest)
-
-add_subdirectory(test)
+if (BUILD_TESTING)
+    include(CTest) 
+    add_subdirectory(test)
+endif()
 
 if (CPPEVENT_DEVEL)
     add_subdirectory(examples)

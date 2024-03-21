@@ -6,6 +6,7 @@
   outputs = { self, nixpkgs }: let
     system = "x86_64-linux";
     pkgs = import nixpkgs {inherit system;};
+    outpkgs = self.packages.${system}; 
   in {
     packages.${system}.default = pkgs.stdenv.mkDerivation {
       src = builtins.path {
@@ -18,9 +19,9 @@
     };
     devShells.${system}.default = pkgs.mkShell {
       packages = [pkgs.gdb];
-      inputsFrom = [self.packages.${system}.default];
+      inputsFrom = [outpkgs.default];
       shellHook = ''
-        cmake -DCMAKE_BUILD_TYPE=Debug -DCPPEVENT_DEVEL=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -B build -S .
+        cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DCPPEVENT_DEVEL=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -B build -S .
       '';
     };
   };
