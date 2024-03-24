@@ -44,6 +44,18 @@ cppevent::status_awaiter cppevent::io_listener::on_write(const void* src, long s
     io_uring_prep_write(sqe, m_fd, src, size, 0);
     return get_status_awaiter();
 }
+
+cppevent::status_awaiter cppevent::io_listener::on_recv(void* dest, long size, int flags) {
+    io_uring_sqe* sqe = get_sqe();
+    io_uring_prep_recv(sqe, m_fd, dest, size, flags);
+    return get_status_awaiter();
+}
+
+cppevent::status_awaiter cppevent::io_listener::on_send(const void* src, long size, int flags) {
+    io_uring_sqe* sqe = get_sqe();
+    io_uring_prep_send(sqe, m_fd, src, size, flags);
+    return get_status_awaiter();
+}
     
 cppevent::status_awaiter cppevent::io_listener::on_readv(const iovec *iov, int iovcnt) {
     io_uring_sqe* sqe = get_sqe();

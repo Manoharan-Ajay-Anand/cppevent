@@ -23,6 +23,8 @@ private:
     byte_buffer<SOCKET_BUFFER_SIZE> m_in_buffer;
     byte_buffer<SOCKET_BUFFER_SIZE> m_out_buffer;
 
+    awaitable_task<e_status> recv_incoming();
+    awaitable_task<e_status> send_outgoing();
 public:
     socket(int fd, std::unique_ptr<io_listener>&& read_l,
            std::unique_ptr<io_listener>&& write_l);
