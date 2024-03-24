@@ -5,6 +5,7 @@
 
 #include <cppevent_base/byte_buffer.hpp>
 #include <cppevent_base/task.hpp>
+#include <cppevent_base/types.hpp>
 
 #include <string>
 #include <memory>
