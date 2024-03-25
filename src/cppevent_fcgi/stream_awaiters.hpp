@@ -11,6 +11,7 @@ class event_loop;
 struct stream_update_awaiter {
     std::optional<std::coroutine_handle<>>& m_producer;
     std::optional<std::coroutine_handle<>>& m_consumer;
+    event_loop& m_loop;
     bool m_ended;
 
     bool await_ready();
@@ -23,7 +24,6 @@ struct stream_update_awaiter {
 struct stream_readable_awaiter {
     std::optional<std::coroutine_handle<>>& m_producer;
     std::optional<std::coroutine_handle<>>& m_consumer;
-    event_loop& m_loop;
     long& m_remaining;
     bool& m_ended;
 

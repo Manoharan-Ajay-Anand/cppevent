@@ -23,8 +23,8 @@ private:
     std::optional<std::coroutine_handle<>> m_producer;
     std::optional<std::coroutine_handle<>> m_consumer;
     
-    long m_remaining;
-    bool m_ended;
+    long m_remaining = 0;
+    bool m_ended = false;
 
 public:
     stream(socket& conn, event_loop& loop);

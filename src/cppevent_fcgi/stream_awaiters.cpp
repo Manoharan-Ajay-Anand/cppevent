@@ -3,7 +3,7 @@
 #include <cppevent_base/event_loop.hpp>
 
 bool cppevent::stream_update_awaiter::await_ready() {
-    return !m_consumer.has_value() && m_ended;
+    return m_ended;
 }
 
 std::coroutine_handle<> cppevent::stream_update_awaiter::await_suspend(std::coroutine_handle<> handle) {
@@ -14,6 +14,11 @@ std::coroutine_handle<> cppevent::stream_update_awaiter::await_suspend(std::coro
 }
 
 void cppevent::stream_update_awaiter::await_resume() {
+    if (m_ended && m_consumer.has_value()) {
+        auto res_handle = m_consumer.value();
+        m_consumer.reset();
+        m_loop.add_op([res_handle]() { res_handle.resume(); });
+    }
 }
 
 bool cppevent::stream_readable_awaiter::await_ready() {
@@ -28,10 +33,5 @@ std::coroutine_handle<> cppevent::stream_readable_awaiter::await_suspend(std::co
 }
 
 bool cppevent::stream_readable_awaiter::await_resume() {
-    if (m_ended && m_producer) {
-        std::coroutine_handle<> h = m_producer.value();
-        m_producer.reset();
-        m_loop.add_op([h]() { h.resume(); });
-    }
     return m_remaining > 0;
 }
