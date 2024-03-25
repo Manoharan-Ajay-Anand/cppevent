@@ -44,7 +44,7 @@ cppevent::awaitable_task<cppevent::header_len> get_lengths(cppevent::stream& s) 
         co_await s.read(data + 1, 3, true);
         result[i] = cppevent::read_u32_be(data);
     }
-    co_return { result[0], result[1] };
+    co_return cppevent::header_len { result[0], result[1] };
 }
 
 cppevent::awaitable_task<void> get_headers(cppevent::stream& s_params,
@@ -75,21 +75,21 @@ cppevent::awaitable_task<void> cppevent::fcgi_handler::handle_request(stream& s_
                                                                       stream& s_stdin,
                                                                       output& o_stdout,
                                                                       output& o_endreq,
-                                                                      output_queue& o_queue,
+                                                                      signal_trigger close_trigger,
                                                                       bool close_conn) {
     std::unordered_map<std::string_view, std::string_view> header_map;
     std::string header_buf;
     co_await get_headers(s_params, header_map, header_buf);
     context cont { std::move(header_map) };
-    
+
     co_await m_router.process(cont, s_stdin, o_stdout);
-    auto stdout_awaiter = o_stdout.end();
+    co_await o_stdout.end();
+    
     char data[8] = {};
-    auto endreq_awaiter = o_endreq.write(data, 8);
-    co_await endreq_awaiter;
-    co_await stdout_awaiter;
+    co_await o_endreq.write(data, 8);
+
     co_await s_stdin.skip(LONG_MAX, false);
     if (close_conn) {
-        o_queue.push({ true, {}, nullptr, 0, { 0, nullptr } });
+        close_trigger.activate();
     }
 }

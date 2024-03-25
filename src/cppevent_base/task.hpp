@@ -56,12 +56,9 @@ struct awaitable_task {
             m_exception = std::current_exception();
         }
         
-        void return_value(const T& val) {
-            m_val_opt = val;
-        }
-
-        void return_value(T&& val) {
-            m_val_opt = std::move(val);
+        template <std::convertible_to<T> U>
+        void return_value(U&& val) {
+            m_val_opt = std::forward<U>(val);
         }
     };
 

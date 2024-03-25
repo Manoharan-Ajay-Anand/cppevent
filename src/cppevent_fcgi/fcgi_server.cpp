@@ -1,6 +1,7 @@
 #include "fcgi_server.hpp"
 
 #include "record.hpp"
+#include "output_control.hpp"
 
 #include <cppevent_base/event_loop.hpp>
 
@@ -27,37 +28,9 @@ cppevent::fcgi_server::fcgi_server(const char* unix_path,
                                                     m_server(unix_path, loop, *this) {
 }
 
-cppevent::awaitable_task<void> cppevent::fcgi_server::write_res(socket& sock,
-                                                                output_queue& out_queue) {
-    bool ended = false;
-    uint8_t padding_data[FCGI_MAX_PADDING];
-    try {
-        while (!ended) {
-            int count = co_await out_queue.await_items();
-            for (int i = 0; i < count; ++i) {
-                auto& o = out_queue.front();
-                if (o.m_close_conn) {
-                    ended = true;
-                    break;
-                }
-                uint8_t data[FCGI_HEADER_LEN];
-                record& r = o.m_record;
-                r.serialize(data);
-                co_await sock.write(data, FCGI_HEADER_LEN);
-                co_await sock.write(o.m_content, o.m_content_len);
-                co_await sock.write(padding_data, r.m_padding_len);
-                o.m_trigger.activate();
-                out_queue.pop();
-            }
-            co_await sock.flush();
-        }
-    } catch (std::runtime_error e) {
-        std::cerr << e.what() << std::endl;
-    }
-}
-
 cppevent::awaitable_task<void> cppevent::fcgi_server::read_req(socket& sock,
-                                                               output_queue& out_queue,
+                                                               output_control& control,
+                                                               signal_trigger close_trigger,
                                                                std::unordered_map<int, request_ptr>& requests) {
     uint8_t header_data[FCGI_HEADER_LEN];
     uint8_t padding_data[FCGI_MAX_PADDING];
@@ -73,7 +46,8 @@ cppevent::awaitable_task<void> cppevent::fcgi_server::read_req(socket& sock,
                         requests[r.m_req_id] = std::make_unique<request>(r.m_req_id, close_conn,
                                                                          std::ref(sock),
                                                                          std::ref(m_loop),
-                                                                         std::ref(out_queue),
+                                                                         std::ref(control),
+                                                                         close_trigger,
                                                                          std::ref(m_handler));
                     }
                     break;
@@ -89,13 +63,13 @@ cppevent::awaitable_task<void> cppevent::fcgi_server::read_req(socket& sock,
     } catch (std::runtime_error e) {
         std::cerr << e.what() << std::endl;
     }
-    out_queue.push({ true, {}, nullptr, 0, { 0, nullptr } });
+    close_trigger.activate();
 }
 
 cppevent::task cppevent::fcgi_server::on_connection(std::unique_ptr<socket> sock) {
     std::unordered_map<int, request_ptr> requests;
-    output_queue out_queue(m_loop);
-    auto res_task = write_res(*sock, out_queue);
-    auto read_task = read_req(*sock, out_queue, requests);
-    co_await res_task;
+    output_control control { m_loop };
+    async_signal close_signal { m_loop };
+    auto read_task = read_req(*sock, control, close_signal.get_trigger(), requests);
+    co_await close_signal.await_signal();
 }
