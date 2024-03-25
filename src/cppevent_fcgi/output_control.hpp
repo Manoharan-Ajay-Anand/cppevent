@@ -29,7 +29,9 @@ public:
 
     output_control_awaiter lock();
 
-    void unlock();
+    bool has_pending() const;
+
+    void release();
 };
 
 }

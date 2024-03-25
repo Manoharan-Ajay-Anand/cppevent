@@ -26,8 +26,10 @@ cppevent::awaitable_task<void> cppevent::output::write(const void* src, long siz
     co_await m_sock.write(header_data, FCGI_HEADER_LEN);
     co_await m_sock.write(src, size);
     co_await m_sock.write(PADDING_DATA, r.m_padding_len);
-    co_await m_sock.flush();
-    m_control.unlock();
+    if (!m_control.has_pending()) {
+        co_await m_sock.flush();
+    }
+    m_control.release();
 }
 
 cppevent::awaitable_task<void> cppevent::output::write(std::string_view s) {

@@ -21,9 +21,13 @@ cppevent::output_control_awaiter cppevent::output_control::lock() {
     return { m_available, m_waiting };
 }
 
-void cppevent::output_control::unlock() {
+bool cppevent::output_control::has_pending() const {
+    return !m_waiting.empty();
+}
+
+void cppevent::output_control::release() {
     m_available = true;
-    if (!m_waiting.empty()) {
+    if (has_pending()) {
         auto handle = m_waiting.front();
         m_waiting.pop();
         m_loop.add_op([handle]() { handle.resume(); });
