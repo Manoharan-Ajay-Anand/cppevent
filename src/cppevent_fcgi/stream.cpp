@@ -15,6 +15,14 @@ cppevent::stream_readable_awaiter cppevent::stream::can_read() {
     return { m_producer, m_consumer, m_remaining, m_ended };
 }
 
+void cppevent::stream::unblock_producer() {
+    if (m_remaining == 0 && m_producer.has_value()) {
+        auto res_handle = m_producer.value();
+        m_producer.reset();
+        m_loop.add_op([res_handle]() { res_handle.resume(); });
+    }
+}
+
 cppevent::awaitable_task<long> cppevent::stream::read(void* dest, long size, bool read_fully) {
     std::byte* dest_ptr = static_cast<std::byte*>(dest);
     long total = 0;
@@ -29,6 +37,7 @@ cppevent::awaitable_task<long> cppevent::stream::read(void* dest, long size, boo
         size -= to_read;
         m_remaining -= to_read;
     }
+    unblock_producer();
     if (read_fully && size > 0) {
         throw std::runtime_error("FastCGI stream read error: stream closed");
     }
@@ -47,6 +56,7 @@ cppevent::awaitable_task<long> cppevent::stream::read(std::string& dest, long si
         size -= to_read;
         m_remaining -= to_read;
     }
+    unblock_producer();
     if (read_fully && size > 0) {
         throw std::runtime_error("FastCGI stream read error: stream closed");
     }
@@ -62,6 +72,7 @@ cppevent::awaitable_task<long> cppevent::stream::skip(long size, bool skip_fully
         size -= to_skip;
         m_remaining -= to_skip;
     }
+    unblock_producer();
     if (skip_fully && size > 0) {
         throw std::runtime_error("FastCGI stream skip error: stream closed");
     }

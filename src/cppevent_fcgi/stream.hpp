@@ -26,6 +26,7 @@ private:
     long m_remaining = 0;
     bool m_ended = false;
 
+    void unblock_producer();
 public:
     stream(socket& conn, event_loop& loop);
 
