@@ -28,9 +28,4 @@ endif()
 
 if (CPPEVENT_DEVEL)
     add_subdirectory(examples)
-else()
-    install(TARGETS cppevent)
-    install(DIRECTORY src/
-            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-            FILES_MATCHING PATTERN "*.hpp")
 endif()
