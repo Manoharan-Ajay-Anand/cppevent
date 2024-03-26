@@ -53,18 +53,12 @@ public:
         m_items.pop();
     }
 
-    void push(const T& item) {
+    template <std::convertible_to<T> U>
+    void push(U&& item) {
         if (m_items.empty()) {
             m_loop.add_op([handle = m_handle]() { handle.resume(); });
         }
-        m_items.push(item);
-    }
-
-    void push(T&& item) {
-        if (m_items.empty()) {
-            m_loop.add_op([handle = m_handle]() { handle.resume(); });
-        }
-        m_items.push(std::move(item));
+        m_items.push(std::forward<U>(item));
     }
 };
 

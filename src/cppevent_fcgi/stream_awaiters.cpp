@@ -17,7 +17,7 @@ void cppevent::stream_update_awaiter::await_resume() {
     if (m_ended && m_consumer.has_value()) {
         auto res_handle = m_consumer.value();
         m_consumer.reset();
-        m_loop.add_op([res_handle]() { res_handle.resume(); });
+        res_handle.resume();
     }
 }
 
