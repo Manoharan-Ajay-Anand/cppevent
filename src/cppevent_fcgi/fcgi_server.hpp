@@ -14,10 +14,6 @@
 
 namespace cppevent {
 
-using request_ptr = std::unique_ptr<request>;
-
-using request_map = std::unordered_map<int, request_ptr>;
-
 class output_control;
 
 class event_loop;
@@ -30,7 +26,7 @@ private:
     fcgi_handler m_handler;
     server m_server;
 
-    awaitable_task<void> read_req(std::unique_ptr<socket> sock,
+    awaitable_task<void> read_req(socket& sock,
                                   output_control& control,
                                   signal_trigger close_trigger,
                                   request_map& requests);

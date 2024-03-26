@@ -1,17 +1,15 @@
 #ifndef CPPEVENT_FCGI_STREAM_AWAITERS_HPP
 #define CPPEVENT_FCGI_STREAM__AWAITERS_HPP
 
-#include <coroutine>
-#include <optional>
+#include "types.hpp"
 
 namespace cppevent {
 
 class event_loop;
 
 struct stream_update_awaiter {
-    std::optional<std::coroutine_handle<>>& m_producer;
-    std::optional<std::coroutine_handle<>>& m_consumer;
-    event_loop& m_loop;
+    coroutine_opt& m_producer;
+    coroutine_opt& m_consumer;
     bool m_ended;
 
     bool await_ready();
@@ -22,8 +20,8 @@ struct stream_update_awaiter {
 };
 
 struct stream_readable_awaiter {
-    std::optional<std::coroutine_handle<>>& m_producer;
-    std::optional<std::coroutine_handle<>>& m_consumer;
+    coroutine_opt& m_producer;
+    coroutine_opt& m_consumer;
     long& m_remaining;
     bool& m_ended;
 

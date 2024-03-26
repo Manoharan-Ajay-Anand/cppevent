@@ -8,7 +8,7 @@
 #include <cstddef>
 #include <stdexcept>
 
-cppevent::stream::stream(socket& conn, event_loop& loop): m_conn(conn), m_loop(loop) {
+cppevent::stream::stream(socket& conn): m_conn(conn) {
 }
 
 cppevent::stream_readable_awaiter cppevent::stream::can_read() {
@@ -65,5 +65,5 @@ cppevent::awaitable_task<long> cppevent::stream::skip(long size, bool skip_fully
 cppevent::stream_update_awaiter cppevent::stream::update(long remaining) {
     m_ended = remaining == 0;
     m_remaining = remaining;
-    return { m_producer, m_consumer, m_loop, m_ended };
+    return { m_producer, m_consumer, m_ended };
 }

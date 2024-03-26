@@ -39,7 +39,7 @@ cppevent::awaitable_task<cppevent::e_status> cppevent::socket::send_outgoing() {
 
 cppevent::awaitable_task<long> cppevent::socket::read(void* dest, long size, bool read_fully) {
     std::byte* dest_p = static_cast<std::byte*>(dest);
-    e_status status;
+    e_status status = 0;
     long total = 0;
 
     do {
@@ -65,7 +65,7 @@ cppevent::awaitable_task<long> cppevent::socket::read(void* dest, long size, boo
 
 
 cppevent::awaitable_task<long> cppevent::socket::read(std::string& dest, long size, bool read_fully) {
-    e_status status;
+    e_status status = 0;
     long total = 0;
 
     do {
@@ -104,7 +104,7 @@ cppevent::awaitable_task<int> cppevent::socket::read_c(bool read_fully) {
 }
 
 cppevent::awaitable_task<long> cppevent::socket::skip(long size, bool skip_fully) {
-    e_status status;
+    e_status status = 0;
     long total = 0;
 
     do {
@@ -129,7 +129,7 @@ cppevent::awaitable_task<long> cppevent::socket::skip(long size, bool skip_fully
 
 cppevent::awaitable_task<void> cppevent::socket::write(const void* src, long size) {
     const std::byte* src_p = static_cast<const std::byte*>(src);
-    e_status status;
+    e_status status = 0;
 
     do {
         long transferred = m_out_buffer.write(src_p, size);

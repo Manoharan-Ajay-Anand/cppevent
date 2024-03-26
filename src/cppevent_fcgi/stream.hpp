@@ -18,15 +18,14 @@ class event_loop;
 class stream {
 private:
     socket& m_conn;
-    event_loop& m_loop;
 
-    std::optional<std::coroutine_handle<>> m_producer;
-    std::optional<std::coroutine_handle<>> m_consumer;
+    coroutine_opt m_producer;
+    coroutine_opt m_consumer;
     
     long m_remaining = 0;
     bool m_ended = false;
 public:
-    stream(socket& conn, event_loop& loop);
+    stream(socket& conn);
 
     stream_readable_awaiter can_read();
     awaitable_task<long> read(void* dest, long size, bool read_fully);
