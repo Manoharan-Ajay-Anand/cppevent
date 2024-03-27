@@ -16,7 +16,7 @@ cppevent::stream_readable_awaiter cppevent::stream::can_read() {
 }
 
 void cppevent::stream::unblock_producer() {
-    if (m_producer) {
+    if (m_remaining == 0 && m_producer.has_value()) {
         auto res_handle = m_producer.value();
         m_producer.reset();
         m_loop.add_op([res_handle]() { res_handle.resume(); });
