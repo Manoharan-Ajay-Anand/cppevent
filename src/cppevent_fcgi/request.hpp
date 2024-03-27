@@ -4,7 +4,6 @@
 #include "stream.hpp"
 #include "output.hpp"
 
-#include <cppevent_base/async_signal.hpp>
 #include <cppevent_base/task.hpp>
 
 #include <coroutine>
@@ -14,7 +13,7 @@ namespace cppevent {
 
 class socket;
 
-class event_loop;
+class signal_trigger;
 
 class fcgi_handler;
 
@@ -31,7 +30,7 @@ private:
     stream* get_stream(int type);
 
 public:
-    request(int id, bool* close_ctrl, bool close_conn,
+    request(int id, const signal_trigger& close_trigger, bool close_conn,
             socket& conn, output_control& control, fcgi_handler& handler);
 
     stream_update_awaiter update(int type, long remaining);

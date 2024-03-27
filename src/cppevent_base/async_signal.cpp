@@ -1,6 +1,6 @@
 #include "async_signal.hpp"
 
-void cppevent::signal_trigger::activate() {
+void cppevent::signal_trigger::activate() const {
     m_loop->add_event({ m_id, 0 });
 }
 

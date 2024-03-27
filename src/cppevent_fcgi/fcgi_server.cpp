@@ -28,15 +28,32 @@ cppevent::fcgi_server::fcgi_server(const char* unix_path,
                                                     m_server(unix_path, loop, *this) {
 }
 
+namespace cppevent {
+
+cppevent::awaitable_task<void> read_header(socket& sock, uint8_t* header_data,
+                                           long& len_read, signal_trigger trigger) {
+    try {
+        len_read = co_await sock.read(header_data, FCGI_HEADER_LEN, false);
+    } catch (std::runtime_error e) {
+        std::cerr << e.what() << std::endl;
+    } 
+    trigger.activate();
+}
+
+}
+
 cppevent::awaitable_task<void> cppevent::fcgi_server::read_req(socket& sock,
                                                                output_control& control,
                                                                request_map& requests) {
-    bool close_ctrl = false;
     uint8_t header_data[FCGI_HEADER_LEN];
     uint8_t padding_data[FCGI_MAX_PADDING];
     
-    while (!close_ctrl) {
-        long len_read = co_await sock.read(header_data, FCGI_HEADER_LEN, false);
+    async_signal sig { m_loop };
+
+    while (true) {
+        long len_read;
+        auto read_task = read_header(sock, header_data, len_read, sig.get_trigger());
+        co_await sig.await_signal();
         if (len_read != FCGI_HEADER_LEN) {
             break;
         }
@@ -48,7 +65,8 @@ cppevent::awaitable_task<void> cppevent::fcgi_server::read_req(socket& sock,
                     co_await sock.read(req_data, FCGI_BEGIN_REQ_LEN, true);
                     bool close_conn = (req_data[2] & FCGI_KEEP_CONN) == 0;
                     requests[r.m_req_id] = std::make_unique<request>(r.m_req_id,
-                                                                     &close_ctrl, close_conn,
+                                                                     sig.get_trigger(),
+                                                                     close_conn,
                                                                      std::ref(sock),
                                                                      std::ref(control),
                                                                      std::ref(m_handler));

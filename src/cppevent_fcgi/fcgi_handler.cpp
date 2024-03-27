@@ -6,6 +6,7 @@
 #include "context.hpp"
 
 #include <cppevent_base/util.hpp>
+#include <cppevent_base/async_signal.hpp>
 
 #include <cstdint>
 #include <string>
@@ -75,7 +76,7 @@ cppevent::awaitable_task<void> cppevent::fcgi_handler::handle_request(stream& s_
                                                                       stream& s_stdin,
                                                                       output& o_stdout,
                                                                       output& o_endreq,
-                                                                      bool* close_ctrl,
+                                                                      signal_trigger close_trigger,
                                                                       bool close_conn) {
     std::unordered_map<std::string_view, std::string_view> header_map;
     std::string header_buf;
@@ -89,5 +90,8 @@ cppevent::awaitable_task<void> cppevent::fcgi_handler::handle_request(stream& s_
     co_await o_endreq.write(data, 8);
 
     co_await s_stdin.skip(LONG_MAX, false);
-    *close_ctrl = close_conn;
+
+    if (close_conn) {
+        close_trigger.activate();
+    }
 }

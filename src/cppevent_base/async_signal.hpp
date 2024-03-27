@@ -12,7 +12,7 @@ struct signal_trigger {
     const e_id m_id;
     event_loop* const m_loop;
 
-    void activate();
+    void activate() const;
 };
 
 struct signal_awaiter {
