@@ -49,7 +49,6 @@ cppevent::awaitable_task<void> cppevent::fcgi_server::read_req(socket& sock,
                     bool close_conn = (req_data[2] & FCGI_KEEP_CONN) == 0;
                     requests[r.m_req_id] = std::make_unique<request>(r.m_req_id,
                                                                      &close_ctrl, close_conn,
-                                                                     m_loop,
                                                                      std::ref(sock),
                                                                      std::ref(control),
                                                                      std::ref(m_handler));

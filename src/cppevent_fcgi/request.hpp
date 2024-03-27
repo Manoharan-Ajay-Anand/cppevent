@@ -31,10 +31,8 @@ private:
     stream* get_stream(int type);
 
 public:
-    request(int id,
-            bool* close_ctrl, bool close_conn,
-            event_loop& loop, socket& conn,
-            output_control& control, fcgi_handler& handler);
+    request(int id, bool* close_ctrl, bool close_conn,
+            socket& conn, output_control& control, fcgi_handler& handler);
 
     stream_update_awaiter update(int type, long remaining);
 };
