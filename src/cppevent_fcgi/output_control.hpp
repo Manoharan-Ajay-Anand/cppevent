@@ -17,18 +17,8 @@ struct output_record {
     long m_type;
     long m_req_id;
     const void* m_src;
-    long m_size;   
-};
-
-struct output_task_awaiter {
-    std::queue<output_record>& m_out_records;
-    coroutine_opt& m_output_handle_opt;
-
-    bool await_ready();
-
-    void await_suspend(std::coroutine_handle<> handle);
-
-    void await_resume();
+    long m_size;
+    std::coroutine_handle<> m_handle;
 };
 
 struct fcgi_write_awaiter {
@@ -36,8 +26,6 @@ struct fcgi_write_awaiter {
     long m_req_id;
     const void* m_src;
     long m_size;
-
-    coroutine_opt& m_waiting_out_opt;
 
     std::queue<output_record>& m_out_records;
     coroutine_opt& m_output_handle_opt;
@@ -65,8 +53,7 @@ public:
 
     awaitable_task<void> begin_res_task(socket& sock);
 
-    fcgi_write_awaiter write(long m_type, long m_req_id, const void* m_src, long m_size,
-                             coroutine_opt& m_waiting_out_opt);
+    fcgi_write_awaiter write(long m_type, long m_req_id, const void* m_src, long m_size);
 
     void shutdown();
 };

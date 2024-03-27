@@ -30,12 +30,16 @@ cppevent::fcgi_server::fcgi_server(const char* unix_path,
 
 cppevent::awaitable_task<void> cppevent::fcgi_server::read_req(socket& sock,
                                                                output_control& control,
-                                                               signal_trigger close_trigger,
                                                                request_map& requests) {
+    bool close_conn = false;
     uint8_t header_data[FCGI_HEADER_LEN];
     uint8_t padding_data[FCGI_MAX_PADDING];
     try {
-        while ((co_await sock.read(header_data, FCGI_HEADER_LEN, false)) == FCGI_HEADER_LEN) {
+        while (!close_conn) {
+            long len_read = co_await sock.read(header_data, FCGI_HEADER_LEN, false);
+            if (len_read != FCGI_HEADER_LEN) {
+                break;
+            }
             record r = record::parse(header_data);
             switch (r.m_type) {
                 case FCGI_BEGIN_REQUEST:
@@ -43,10 +47,11 @@ cppevent::awaitable_task<void> cppevent::fcgi_server::read_req(socket& sock,
                         uint8_t req_data[FCGI_BEGIN_REQ_LEN];
                         co_await sock.read(req_data, FCGI_BEGIN_REQ_LEN, true);
                         bool close_conn = (req_data[2] & FCGI_KEEP_CONN) == 0;
-                        requests[r.m_req_id] = std::make_unique<request>(r.m_req_id, close_conn,
+                        requests[r.m_req_id] = std::make_unique<request>(r.m_req_id,
+                                                                         &close_conn,
+                                                                         m_loop,
                                                                          std::ref(sock),
                                                                          std::ref(control),
-                                                                         close_trigger,
                                                                          std::ref(m_handler));
                     }
                     break;
@@ -62,16 +67,12 @@ cppevent::awaitable_task<void> cppevent::fcgi_server::read_req(socket& sock,
     } catch (std::runtime_error e) {
         std::cerr << e.what() << std::endl;
     }
-    close_trigger.activate();
 }
 
 cppevent::task cppevent::fcgi_server::on_connection(std::unique_ptr<socket> sock) {
     request_map requests;
     output_control control { requests };
-    async_signal close_signal { m_loop };
     auto write_task = control.begin_res_task(*sock);
-    auto read_task = read_req(*sock, control, close_signal.get_trigger(), requests);
-    co_await close_signal.await_signal();
-    control.shutdown();
-    co_await write_task;
+    co_await read_req(*sock, control, requests);
+    // control.shutdown();
 }

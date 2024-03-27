@@ -28,7 +28,6 @@ private:
 
     awaitable_task<void> read_req(socket& sock,
                                   output_control& control,
-                                  signal_trigger close_trigger,
                                   request_map& requests);
 public:
     fcgi_server(const char* name, const char* service, event_loop& loop, router& router);

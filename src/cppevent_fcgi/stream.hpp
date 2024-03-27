@@ -18,14 +18,17 @@ class event_loop;
 class stream {
 private:
     socket& m_conn;
+    event_loop& m_loop;
 
     coroutine_opt m_producer;
     coroutine_opt m_consumer;
     
     long m_remaining = 0;
     bool m_ended = false;
+
+    void unblock_producer();
 public:
-    stream(socket& conn);
+    stream(socket& conn, event_loop& m_loop);
 
     stream_readable_awaiter can_read();
     awaitable_task<long> read(void* dest, long size, bool read_fully);

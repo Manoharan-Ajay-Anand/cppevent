@@ -75,8 +75,7 @@ cppevent::awaitable_task<void> cppevent::fcgi_handler::handle_request(stream& s_
                                                                       stream& s_stdin,
                                                                       output& o_stdout,
                                                                       output& o_endreq,
-                                                                      signal_trigger close_trigger,
-                                                                      bool close_conn) {
+                                                                      bool* close_conn) {
     std::unordered_map<std::string_view, std::string_view> header_map;
     std::string header_buf;
     co_await get_headers(s_params, header_map, header_buf);
@@ -90,6 +89,6 @@ cppevent::awaitable_task<void> cppevent::fcgi_handler::handle_request(stream& s_
 
     co_await s_stdin.skip(LONG_MAX, false);
     if (close_conn) {
-        close_trigger.activate();
+        *close_conn = true;
     }
 }

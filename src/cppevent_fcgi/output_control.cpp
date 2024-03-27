@@ -7,15 +7,39 @@
 
 #include <stdexcept>
 
-bool cppevent::output_task_awaiter::await_ready() {
-    return !m_out_records.empty();
-}
+namespace cppevent {
 
-void cppevent::output_task_awaiter::await_suspend(std::coroutine_handle<> handle) {
-    m_output_handle_opt = handle;
-}
+struct output_task_awaiter {
+    std::queue<output_record>& m_out_records;
+    coroutine_opt& m_output_handle_opt;
 
-void cppevent::output_task_awaiter::await_resume() {
+    bool await_ready() {
+        return !m_out_records.empty();
+    }
+
+    void await_suspend(std::coroutine_handle<> handle) {
+        m_output_handle_opt = handle;
+    }
+
+    void await_resume() {}
+};
+
+struct symmetric_awaiter {
+    coroutine_opt& m_output_handle_opt;
+    std::coroutine_handle<> res_handle;
+
+    bool await_ready() {
+        return false;
+    }
+
+    std::coroutine_handle<> await_suspend(std::coroutine_handle<> handle) {
+        m_output_handle_opt = handle;
+        return res_handle;
+    }
+    
+    void await_resume() {}
+};
+
 }
 
 bool cppevent::fcgi_write_awaiter::await_ready() {
@@ -23,8 +47,7 @@ bool cppevent::fcgi_write_awaiter::await_ready() {
 }
 
 std::coroutine_handle<> cppevent::fcgi_write_awaiter::await_suspend(std::coroutine_handle<> handle) {
-    m_out_records.push({ m_type, m_req_id, m_src, m_size });
-    m_waiting_out_opt = handle;
+    m_out_records.push({ m_type, m_req_id, m_src, m_size, handle });
     std::coroutine_handle<> res_handle = std::noop_coroutine();
     if (m_output_handle_opt.has_value()) {
         res_handle = m_output_handle_opt.value();
@@ -71,21 +94,17 @@ cppevent::awaitable_task<void> cppevent::output_control::begin_res_task(socket& 
                 m_shutdown = true;
             }
         }
-        auto it = m_req_map.find(o.m_req_id);
-        if (it != m_req_map.end()) {
-            (it->second)->resume_output();
-        }
+        std::coroutine_handle<> res_handle = o.m_handle;
         m_out_records.pop();
+        co_await symmetric_awaiter { m_output_handle_opt, res_handle };
     }
 }
 
 cppevent::fcgi_write_awaiter cppevent::output_control::write(long m_type,
                                                              long m_req_id,
-                                                             const void* m_src, long m_size,
-                                                             coroutine_opt& m_waiting_out_opt) {
+                                                             const void* m_src, long m_size) {
     return { 
-        m_type, m_req_id, m_src, m_size,
-        m_waiting_out_opt, m_out_records, m_output_handle_opt, m_shutdown
+        m_type, m_req_id, m_src, m_size, m_out_records, m_output_handle_opt, m_shutdown
     };
 }
 

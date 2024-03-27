@@ -3,7 +3,7 @@
 #include <cppevent_base/event_loop.hpp>
 
 bool cppevent::stream_update_awaiter::await_ready() {
-    return m_ended;
+    return m_ended && !m_consumer.has_value();
 }
 
 std::coroutine_handle<> cppevent::stream_update_awaiter::await_suspend(std::coroutine_handle<> handle) {
@@ -14,11 +14,6 @@ std::coroutine_handle<> cppevent::stream_update_awaiter::await_suspend(std::coro
 }
 
 void cppevent::stream_update_awaiter::await_resume() {
-    if (m_ended && m_consumer.has_value()) {
-        auto res_handle = m_consumer.value();
-        m_consumer.reset();
-        res_handle.resume();
-    }
 }
 
 bool cppevent::stream_readable_awaiter::await_ready() {
