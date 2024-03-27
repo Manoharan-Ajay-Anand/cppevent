@@ -3,7 +3,7 @@
 #include "record.hpp"
 #include "fcgi_handler.hpp"
 
-cppevent::request::request(int id, bool* close_conn,
+cppevent::request::request(int id, bool* close_ctrl, bool close_conn,
                            event_loop& loop, socket& conn,
                            output_control& control, fcgi_handler& handler)
                                     : m_params(conn, loop),
@@ -11,7 +11,8 @@ cppevent::request::request(int id, bool* close_conn,
                                       m_stdout(id, FCGI_STDOUT, control),
                                       m_endreq(id, FCGI_END_REQUEST, control),
                                       m_task(handler.handle_request(m_params, m_stdin, m_stdout,
-                                                                    m_endreq, close_conn)) {
+                                                                    m_endreq, close_ctrl,
+                                                                    close_conn)) {
 }
 
 cppevent::stream* cppevent::request::get_stream(int type) {

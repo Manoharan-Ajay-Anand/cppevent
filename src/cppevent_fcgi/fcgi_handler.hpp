@@ -22,7 +22,7 @@ public:
     
     awaitable_task<void> handle_request(stream& s_params, stream& s_stdin,
                                         output& o_stdout, output& o_endreq,
-                                        bool* close_conn);
+                                        bool* close_ctrl, bool close_conn);
 };
 
 }

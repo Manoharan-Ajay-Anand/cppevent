@@ -31,11 +31,11 @@ cppevent::fcgi_server::fcgi_server(const char* unix_path,
 cppevent::awaitable_task<void> cppevent::fcgi_server::read_req(socket& sock,
                                                                output_control& control,
                                                                request_map& requests) {
-    bool close_conn = false;
+    bool close_ctrl = false;
     uint8_t header_data[FCGI_HEADER_LEN];
     uint8_t padding_data[FCGI_MAX_PADDING];
     try {
-        while (!close_conn) {
+        while (!close_ctrl) {
             long len_read = co_await sock.read(header_data, FCGI_HEADER_LEN, false);
             if (len_read != FCGI_HEADER_LEN) {
                 break;
@@ -48,7 +48,8 @@ cppevent::awaitable_task<void> cppevent::fcgi_server::read_req(socket& sock,
                         co_await sock.read(req_data, FCGI_BEGIN_REQ_LEN, true);
                         bool close_conn = (req_data[2] & FCGI_KEEP_CONN) == 0;
                         requests[r.m_req_id] = std::make_unique<request>(r.m_req_id,
-                                                                         &close_conn,
+                                                                         &close_ctrl,
+                                                                         close_conn,
                                                                          m_loop,
                                                                          std::ref(sock),
                                                                          std::ref(control),
