@@ -24,26 +24,10 @@ struct output_task_awaiter {
     void await_resume() {}
 };
 
-struct symmetric_awaiter {
-    coroutine_opt& m_output_handle_opt;
-    std::coroutine_handle<> res_handle;
-
-    bool await_ready() {
-        return false;
-    }
-
-    std::coroutine_handle<> await_suspend(std::coroutine_handle<> handle) {
-        m_output_handle_opt = handle;
-        return res_handle;
-    }
-    
-    void await_resume() {}
-};
-
 }
 
 bool cppevent::fcgi_write_awaiter::await_ready() {
-    return m_shutdown;
+    return m_error;
 }
 
 std::coroutine_handle<> cppevent::fcgi_write_awaiter::await_suspend(std::coroutine_handle<> handle) {
@@ -57,25 +41,22 @@ std::coroutine_handle<> cppevent::fcgi_write_awaiter::await_suspend(std::corouti
 }
 
 void cppevent::fcgi_write_awaiter::await_resume() {
-    if (m_shutdown) {
-        throw std::runtime_error("FCGI socket write failed");
+    if (m_error) {
+        throw std::runtime_error("FCGI write failed");
     }
-}
-
-cppevent::output_control::output_control(request_map& req_map): m_req_map(req_map) {
 }
 
 constexpr uint8_t PADDING_DATA[cppevent::FCGI_MAX_PADDING] = {};
 
 cppevent::awaitable_task<void> cppevent::output_control::begin_res_task(socket& sock) {
-    while (!m_shutdown || !m_out_records.empty()) {
+    while (true) {
         co_await output_task_awaiter { m_out_records, m_output_handle_opt };
         if (m_out_records.empty()) {
             break;
         }
         bool to_flush = m_out_records.size() == 1;
         output_record& o = m_out_records.front();
-        if (!m_shutdown) {
+        if (!m_error) {
             record r {
                 FCGI_VERSION_1,
                 static_cast<uint8_t>(o.m_type),
@@ -91,12 +72,12 @@ cppevent::awaitable_task<void> cppevent::output_control::begin_res_task(socket& 
                 co_await sock.write(PADDING_DATA, r.m_padding_len);
                 if (to_flush) co_await sock.flush();
             } catch (...) {
-                m_shutdown = true;
+                m_error = true;
             }
         }
         std::coroutine_handle<> res_handle = o.m_handle;
         m_out_records.pop();
-        co_await symmetric_awaiter { m_output_handle_opt, res_handle };
+        res_handle.resume();
     }
 }
 
@@ -104,15 +85,6 @@ cppevent::fcgi_write_awaiter cppevent::output_control::write(long m_type,
                                                              long m_req_id,
                                                              const void* m_src, long m_size) {
     return { 
-        m_type, m_req_id, m_src, m_size, m_out_records, m_output_handle_opt, m_shutdown
+        m_type, m_req_id, m_src, m_size, m_out_records, m_output_handle_opt, m_error
     };
-}
-
-void cppevent::output_control::shutdown() {
-    m_shutdown = true;
-    if (m_output_handle_opt.has_value()) {
-        auto res_handle = m_output_handle_opt.value();
-        m_output_handle_opt.reset();
-        res_handle.resume();
-    }
 }

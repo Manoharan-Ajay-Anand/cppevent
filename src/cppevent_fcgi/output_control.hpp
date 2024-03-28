@@ -29,7 +29,7 @@ struct fcgi_write_awaiter {
 
     std::queue<output_record>& m_out_records;
     coroutine_opt& m_output_handle_opt;
-    bool& m_shutdown;
+    bool& m_error;
 
     bool await_ready();
 
@@ -40,22 +40,17 @@ struct fcgi_write_awaiter {
 
 class output_control {
 private:
-    request_map& m_req_map;
+    bool m_error = false;
 
     coroutine_opt m_output_handle_opt;
-    
-    bool m_shutdown = false;
 
     std::queue<output_record> m_out_records;
 
 public:
-    output_control(request_map& req_map);
 
     awaitable_task<void> begin_res_task(socket& sock);
 
     fcgi_write_awaiter write(long m_type, long m_req_id, const void* m_src, long m_size);
-
-    void shutdown();
 };
 
 }
