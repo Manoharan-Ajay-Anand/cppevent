@@ -11,22 +11,20 @@ namespace cppevent {
 
 template <typename T>
 struct async_queue_awaiter {
-private:
     std::queue<T>& m_items;
-    std::coroutine_handle<>& m_handle;
-public:
-    async_queue_awaiter(std::queue<T>& items, std::coroutine_handle<>& handle): m_items(items),
-                                                                                m_handle(handle) {
-    }
+    event_callback& m_callback;
 
-    bool await_ready() { return !m_items.empty(); }
+    bool await_ready() {
+        return !m_items.empty();
+    }
     
     void await_suspend(std::coroutine_handle<> handle) {
-        m_handle = handle;
+        m_callback.set_handler([handle](e_status stat) {
+            handle.resume();
+        });
     }
     
     long await_resume() {
-        m_handle = std::noop_coroutine(); 
         return m_items.size();
     }
 };
@@ -36,13 +34,13 @@ class async_queue {
 private:
     std::queue<T> m_items;
     event_loop& m_loop;
-    std::coroutine_handle<> m_handle;
+    event_callback m_callback;
 public:
-    async_queue(event_loop& loop): m_loop(loop) {
+    async_queue(event_loop& loop): m_loop(loop), m_callback(loop.get_event_callback()) {
     }
 
     async_queue_awaiter<T> await_items() {
-        return { m_items, m_handle };
+        return { m_items, m_callback };
     }
 
     T& front() {
@@ -56,7 +54,7 @@ public:
     template <std::convertible_to<T> U>
     void push(U&& item) {
         if (m_items.empty()) {
-            m_loop.add_op([handle = m_handle]() { handle.resume(); });
+            m_loop.add_event({ m_callback.get_id(), 0 });
         }
         m_items.push(std::forward<U>(item));
     }
