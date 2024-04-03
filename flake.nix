@@ -7,16 +7,11 @@
     system = "x86_64-linux";
     pkgs = import nixpkgs {inherit system;};
   in {
-    packages.${system} = {
-      default = pkgs.gcc13Stdenv.mkDerivation {
-        src = builtins.path {
-          path = ./.;
-        };
-        name = "cppevent-1.0";
-        inherit system;
-        nativeBuildInputs = [pkgs.cmake pkgs.doctest];
-        buildInputs = [pkgs.liburing];
-      };
+    devShells.${system}.default = (pkgs.mkShell.override { stdenv = pkgs.gcc13Stdenv; }) {
+      packages = [pkgs.gdb pkgs.valgrind pkgs.cmake pkgs.doctest pkgs.liburing];
+      shellHook = ''
+        cmake -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -B build -S .
+      '';
     };
   };
 }
