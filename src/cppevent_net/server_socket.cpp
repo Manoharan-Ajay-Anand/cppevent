@@ -50,6 +50,9 @@ cppevent::server_socket::server_socket(const char* unix_path,
     int status = ::bind(m_fd, reinterpret_cast<const sockaddr*>(&addr), sizeof(addr));
     throw_if_error(status, "server_socket bind failed: ");
 
+    status = ::chmod(unix_path, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+    throw_if_error(status, "server_socket chmod failed: ");
+
     status = ::listen(m_fd, 5);
     throw_if_error(status, "server_socket listen failed: ");
 
