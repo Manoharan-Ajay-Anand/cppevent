@@ -51,10 +51,6 @@ constexpr uint8_t PADDING_DATA[cppevent::FCGI_MAX_PADDING] = {};
 cppevent::awaitable_task<void> cppevent::output_control::begin_res_task(socket& sock) {
     while (true) {
         co_await output_task_awaiter { m_out_records, m_output_handle_opt };
-        if (m_out_records.empty()) {
-            break;
-        }
-        bool to_flush = m_out_records.size() == 1;
         output_record& o = m_out_records.front();
         if (!m_error) {
             record r {
@@ -70,7 +66,7 @@ cppevent::awaitable_task<void> cppevent::output_control::begin_res_task(socket& 
                 co_await sock.write(header_data, FCGI_HEADER_LEN);
                 co_await sock.write(o.m_src, o.m_size);
                 co_await sock.write(PADDING_DATA, r.m_padding_len);
-                if (to_flush) co_await sock.flush();
+                co_await sock.flush();
             } catch (...) {
                 m_error = true;
             }
