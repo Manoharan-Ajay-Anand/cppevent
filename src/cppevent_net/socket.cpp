@@ -19,8 +19,13 @@ cppevent::socket::socket(int fd, event_loop& loop): socket(fd,
 }
 
 cppevent::socket::~socket() {
-    int status = close(m_fd);
+    int status = ::close(m_fd);
     throw_if_error(status, "Failed to close socket fd: ");
+}
+
+void cppevent::socket::shutdown() {
+    int status = ::shutdown(m_fd, SHUT_RDWR);
+    throw_if_error(status, "Failed to shutdown socket fd: ");
 }
 
 cppevent::awaitable_task<cppevent::e_status> cppevent::socket::recv_incoming() {

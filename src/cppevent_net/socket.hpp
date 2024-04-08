@@ -32,6 +32,8 @@ public:
     socket(int fd, event_loop& loop);
     ~socket();
 
+    void shutdown();
+
     awaitable_task<long> read(void* dest, long size, bool read_fully);
     awaitable_task<long> read(std::string& dest, long size, bool read_fully);
     awaitable_task<int> read_c(bool read_fully);

@@ -80,4 +80,5 @@ cppevent::task cppevent::fcgi_server::on_connection(std::unique_ptr<socket> sock
     auto read_task = read_req(*sock, control, requests, signal.get_trigger());
 
     co_await signal.await_signal();
+    sock->shutdown();
 }
