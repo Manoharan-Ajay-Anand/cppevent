@@ -6,24 +6,17 @@
 #define SAMPLE_NUM 100
 
 TEST_CASE("event_bus test") {
-    cppevent::e_status status = 0;
     cppevent::event_bus bus;
 
     SUBCASE("status update") {
         cppevent::event_callback cb { bus };
-        cb.set_handler([&status](cppevent::e_status s) {
-            status = s;
-        });
         bus.notify(cb.get_id(), SAMPLE_NUM);
-        CHECK_EQ(status, SAMPLE_NUM);
+        CHECK_EQ(cb.get_status(), SAMPLE_NUM);
     }
 
     SUBCASE("no status update") {
         cppevent::event_callback cb { bus };
-        cb.set_handler([&status](cppevent::e_status s) {
-            status = s;
-        });
         bus.notify(cb.get_id() * 10, SAMPLE_NUM);
-        CHECK_EQ(status, 0);
+        CHECK_FALSE(cb.has_status());
     }
 }
