@@ -4,7 +4,6 @@
 #include "types.hpp"
 
 #include <unordered_map>
-#include <stack>
 
 namespace cppevent {
 
@@ -15,7 +14,6 @@ private:
     e_id m_id_counter = 0;
     std::unordered_map<e_id, event_callback*> m_callbacks;
 
-    std::stack<e_id> m_to_remove;
 public:
     e_id register_event_callback(event_callback* callback);
     void deregister_event_callback(e_id id);
