@@ -8,33 +8,14 @@
 
 namespace cppevent {
 
-class awaiter_store {
-private:
-    bool m_is_set;
-    std::optional<e_status> m_status_opt;
-    std::coroutine_handle<> m_handle;
-
-public:
-    awaiter_store();
-
-    void prepare();
-
-    void set_handle(std::coroutine_handle<> handle);
-
-    void resume(e_status status);
-
-    bool has_status();
-    e_status get_status();
-
-    void reset();
-};
+class event_callback;
 
 class status_awaiter {
 private:
-    awaiter_store* m_store;
+    event_callback* m_callback;
 
 public:
-    status_awaiter(awaiter_store* store);
+    status_awaiter(event_callback* callback);
     ~status_awaiter();
 
     status_awaiter(const status_awaiter&) = delete;
