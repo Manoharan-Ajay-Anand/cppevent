@@ -1,4 +1,4 @@
 add_library(cppevent_postgres OBJECT
-    connection_pool.cpp
-    connection.cpp
+    pg_connection.cpp
+    pg_database.cpp
 )
