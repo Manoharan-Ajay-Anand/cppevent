@@ -19,8 +19,8 @@ cppevent::pg_database::pg_database(const char* unix_path,
 
 cppevent::awaitable_task<cppevent::pg_connection> cppevent::pg_database::get_connection() {
     if (m_idle.empty() && m_conn_count < m_config.m_max_connections) {
-        pg_connection conn { m_conn_count };
-        co_await conn.init(co_await m_client_sock.connect());
+        pg_connection conn;
+        co_await conn.init(co_await m_client_sock.connect(), &m_conn_count, m_config);
         co_return std::move(conn);
     }
 

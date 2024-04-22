@@ -1,6 +1,7 @@
 #ifndef CPPEVENT_POSTGRES_PG_DATABASE_HPP
 #define CPPEVENT_POSTGRES_PG_DATABASE_HPP
 
+#include "types.hpp"
 #include "pg_connection.hpp"
 
 #include <cppevent_base/task.hpp>
@@ -11,12 +12,6 @@
 #include <queue>
 
 namespace cppevent {
-
-struct pg_config {
-    const char* m_user = nullptr;
-    const char* m_database = nullptr;
-    long m_max_connections = 1;
-};
 
 class pg_database {
 private:
