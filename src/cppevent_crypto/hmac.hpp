@@ -14,7 +14,6 @@ private:
     crypto& m_crypt;
     EVP_MAC_CTX* m_ctx;
 
-
 public:
     hmac(crypto& crypt);
     ~hmac();
