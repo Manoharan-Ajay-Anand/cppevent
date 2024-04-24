@@ -8,7 +8,7 @@
 
 namespace cppevent {
 
-std::string base64_encode(const uint8_t* data, long size);
+std::string base64_encode(const void* data, long size);
 
 std::vector<uint8_t> base64_decode(std::string_view str);
 

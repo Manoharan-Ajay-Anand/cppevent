@@ -18,6 +18,7 @@ add_library(cppevent
   $<TARGET_OBJECTS:cppevent_base>
   $<TARGET_OBJECTS:cppevent_net>
   $<TARGET_OBJECTS:cppevent_fcgi>
+  $<TARGET_OBJECTS:cppevent_crypto>
 )
 
 target_include_directories(cppevent INTERFACE src)

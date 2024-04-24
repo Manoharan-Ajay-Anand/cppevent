@@ -58,12 +58,13 @@ uint64_t get_msb(uint64_t num, long total_bits) {
     return (num >> (total_bits - MSB_BITS)) & mask;
 }
 
-std::string cppevent::base64_encode(const uint8_t* data, long size) {
+std::string cppevent::base64_encode(const void* data, long size) {
+    const uint8_t* data_ptr = static_cast<const uint8_t*>(data);
     std::string result;
     uint64_t num = 0;
     long num_bits = 0;
     for (long i = 0; i < size; ++i) {
-        uint8_t b = *(data + i);
+        uint8_t b = *(data_ptr + i);
         num = (num << OCTET) + b;
         num_bits += OCTET;
 
