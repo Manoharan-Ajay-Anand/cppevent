@@ -8,12 +8,35 @@
 
 namespace cppevent {
 
+enum class auth_type {
+    OK = 0,
+    CLEAR_TEXT_PASSWORD = 3,
+    SASL = 10,
+    SASL_CONTINUE,
+    SASL_FINAL
+};
+
+enum class response_type: char {
+    ERROR_RESPONSE = 'E',
+    NEGOTIATE_PROTOCOL_VERSION = 'v',
+    AUTHENTICATION = 'R'
+};
+
+struct response_header {
+    response_type m_type;
+    long m_size;
+};
+
 struct pg_config;
 
 class pg_connection {
 private:
     std::unique_ptr<socket> m_sock;
     long* m_conn_count = nullptr;
+
+    awaitable_task<response_header> get_response_header();
+
+    awaitable_task<void> handle_auth(response_header res_header, const pg_config& config);
 public:
     pg_connection() = default;
     ~pg_connection();
