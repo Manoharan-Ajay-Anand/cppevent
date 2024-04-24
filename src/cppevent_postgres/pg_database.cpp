@@ -36,7 +36,9 @@ cppevent::awaitable_task<cppevent::pg_connection> cppevent::pg_database::get_con
 
 void cppevent::pg_database::release(pg_connection& conn) {
     m_idle.push(std::move(conn));
-    e_id id = m_waiting.front();
-    m_waiting.pop();
-    m_loop.add_event({ id, 0 });
+    if (!m_waiting.empty()) {
+        e_id id = m_waiting.front();
+        m_waiting.pop();
+        m_loop.add_event({ id, 0 });
+    }
 }
