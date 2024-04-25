@@ -22,7 +22,7 @@ enum class response_type: char {
     AUTHENTICATION = 'R'
 };
 
-struct response_header {
+struct response_info {
     response_type m_type;
     long m_size;
 };
@@ -34,9 +34,9 @@ private:
     std::unique_ptr<socket> m_sock;
     long* m_conn_count = nullptr;
 
-    awaitable_task<response_header> get_response_header();
+    awaitable_task<response_info> get_response_info();
 
-    awaitable_task<void> handle_auth(response_header res_header, const pg_config& config);
+    awaitable_task<void> handle_auth(response_info info, const pg_config& config);
 public:
     pg_connection() = default;
     ~pg_connection();
