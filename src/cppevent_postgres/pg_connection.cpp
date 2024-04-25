@@ -3,11 +3,14 @@
 #include "types.hpp"
 
 #include <cppevent_base/util.hpp>
+#include <cppevent_crypto/encoding.hpp>
 
 #include <string>
 #include <string_view>
 #include <stdexcept>
 #include <unordered_set>
+
+#include <openssl/rand.h>
 
 constexpr long STARTUP_HEADER_SIZE = 8;
 constexpr uint32_t POSTGRES_PROTOCOL_MAJOR_VERSION = 3;
@@ -49,6 +52,16 @@ cppevent::awaitable_task<cppevent::response_info> cppevent::pg_connection::get_r
     long size = read_u32_be(&(res_header[1])) - INT_32_OCTETS;
 
     co_return response_info { type, size };
+}
+
+constexpr long CLIENT_NONCE_OCTETS = 24;
+
+std::string generate_client_nonce() {
+    uint8_t nonce_data[CLIENT_NONCE_OCTETS];
+    if (RAND_bytes(nonce_data, CLIENT_NONCE_OCTETS) != 1) {
+        throw std::runtime_error("Error generating RAND_BYTES");
+    }
+    return cppevent::base64_encode(nonce_data, CLIENT_NONCE_OCTETS);
 }
 
 cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_info info,
