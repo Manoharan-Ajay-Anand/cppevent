@@ -36,7 +36,7 @@ private:
 
     awaitable_task<response_info> get_response_info();
 
-    awaitable_task<void> handle_auth(response_info info, const pg_config& config);
+    awaitable_task<bool> handle_auth(response_info info, const pg_config& config);
 public:
     pg_connection() = default;
     ~pg_connection();

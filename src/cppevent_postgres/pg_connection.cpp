@@ -22,7 +22,7 @@ constexpr long HEADER_SIZE = 5;
 
 constexpr long INT_32_OCTETS = 4;
 
-constexpr std::string_view SCRAM_SHA256 = "SCRAM-SHA-256";
+constexpr char SCRAM_SHA256[] = "SCRAM-SHA-256";
 
 cppevent::pg_connection::~pg_connection() {
     if (m_sock) {
@@ -51,16 +51,23 @@ cppevent::awaitable_task<cppevent::response_info> cppevent::pg_connection::get_r
     co_return response_info { type, size };
 }
 
-cppevent::awaitable_task<void> cppevent::pg_connection::handle_auth(response_info info,
+cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_info info,
                                                                     const pg_config& config) {
     uint8_t type_data[INT_32_OCTETS];
     co_await m_sock->read(type_data, INT_32_OCTETS, true);
     auth_type type = static_cast<auth_type>(read_u32_be(type_data));
     switch (type) {
         case auth_type::OK:
+            co_return true;
+        case auth_type::CLEAR_TEXT_PASSWORD: {
+            uint8_t msg_header[HEADER_SIZE];
+            msg_header[0] = 'p';
+            long password_size = config.m_password.size() + 1;
+            write_u32_be(&(msg_header[1]), password_size + INT_32_OCTETS);
+            co_await m_sock->write(msg_header, HEADER_SIZE);
+            co_await m_sock->write(config.m_password.c_str(), password_size);
             break;
-        case auth_type::CLEAR_TEXT_PASSWORD:
-            break;
+        }
         case auth_type::SASL: {
             std::string sasl_mechanisms;
             co_await m_sock->read(sasl_mechanisms, info.m_size - INT_32_OCTETS, true);
@@ -72,6 +79,7 @@ cppevent::awaitable_task<void> cppevent::pg_connection::handle_auth(response_inf
         default:
             throw std::runtime_error("Unrecognized auth method");
     }
+    co_return false;
 }
 
 cppevent::awaitable_task<void> cppevent::pg_connection::init(std::unique_ptr<socket>&& sock,
@@ -100,17 +108,21 @@ cppevent::awaitable_task<void> cppevent::pg_connection::init(std::unique_ptr<soc
     co_await m_sock->write(message.data(), message.size());
     co_await m_sock->flush();
 
-    response_info info = co_await get_response_info(); 
+    bool auth_success = false;
 
-    switch (info.m_type) {
-        case response_type::ERROR_RESPONSE:
-            throw std::runtime_error("Postgres ErrorResponse");
-        case response_type::NEGOTIATE_PROTOCOL_VERSION:
-            throw std::runtime_error("Postgres Protocol Version mismatch");
-        case response_type::AUTHENTICATION:
-            co_await handle_auth(info, config);
-            break;
-        default:
-            throw std::runtime_error("Postgres unexpected response");
+    while (!auth_success) {
+        response_info info = co_await get_response_info(); 
+
+        switch (info.m_type) {
+            case response_type::ERROR_RESPONSE:
+                throw std::runtime_error("Postgres ErrorResponse");
+            case response_type::NEGOTIATE_PROTOCOL_VERSION:
+                throw std::runtime_error("Postgres Protocol Version mismatch");
+            case response_type::AUTHENTICATION:
+                auth_success = co_await handle_auth(info, config);
+                break;
+            default:
+                throw std::runtime_error("Postgres unexpected response");
+        }
     }
 }
