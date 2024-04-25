@@ -28,6 +28,8 @@ constexpr long INT_32_OCTETS = 4;
 
 constexpr char SCRAM_SHA256[] = "SCRAM-SHA-256";
 
+constexpr std::string_view GS2_HEADER = "n,,";
+
 cppevent::pg_connection::~pg_connection() {
     if (m_sock) {
         --(*m_conn_count);
@@ -83,6 +85,7 @@ cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_inf
             write_u32_be(&(msg_header[1]), password_size + INT_32_OCTETS);
             co_await m_sock->write(msg_header, HEADER_SIZE);
             co_await m_sock->write(config.m_password.c_str(), password_size);
+            co_await m_sock->flush();
             break;
         }
         case auth_type::SASL: {
@@ -92,24 +95,34 @@ cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_inf
                 throw std::runtime_error("SCRAM mechanism not found");
             }
 
-            context.m_client_nonce = generate_client_nonce();
-            std::string init_res = std::format("n,,n={},r={}", config.m_user, context.m_client_nonce);
-            long msg_size = INT_32_OCTETS + sizeof(SCRAM_SHA256) + INT_32_OCTETS + init_res.size();
+            std::string& client_nonce = context.m_client_nonce;
+            std::string& client_first_msg_bare = context.m_client_first_msg_bare;
+
+            client_nonce = generate_client_nonce();
+            client_first_msg_bare = std::format("n={},r={}", config.m_user, client_nonce);
+            long client_first_msg_size = GS2_HEADER.size() + client_first_msg_bare.size();
+
+            long msg_size = 2* INT_32_OCTETS + sizeof(SCRAM_SHA256) + client_first_msg_size;
             write_u32_be(&(msg_header[1]), msg_size);
+
             co_await m_sock->write(msg_header, HEADER_SIZE);
             co_await m_sock->write(SCRAM_SHA256, sizeof(SCRAM_SHA256));
             
             uint8_t arr[INT_32_OCTETS];
-            write_u32_be(arr, init_res.size());
+            write_u32_be(arr, client_first_msg_size);
+
             co_await m_sock->write(arr, INT_32_OCTETS);
-            co_await m_sock->write(init_res.data(), init_res.size());
+            co_await m_sock->write(GS2_HEADER.data(), GS2_HEADER.size());
+            co_await m_sock->write(client_first_msg_bare.data(), client_first_msg_bare.size());
+            co_await m_sock->flush();
             break;
+        }
+        case auth_type::SASL_CONTINUE: {
+
         }
         default:
             throw std::runtime_error("Unrecognized auth method");
     }
-    
-    co_await m_sock->flush();
     co_return false;
 }
 

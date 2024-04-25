@@ -29,6 +29,8 @@ struct response_info {
 
 struct sasl_context {
     std::string m_client_nonce;
+    std::string m_client_first_msg_bare;
+    std::string m_server_first_msg;
 };
 
 struct pg_config;
