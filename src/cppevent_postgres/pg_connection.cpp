@@ -5,6 +5,7 @@
 #include <cppevent_base/util.hpp>
 #include <cppevent_crypto/encoding.hpp>
 
+#include <format>
 #include <string>
 #include <string_view>
 #include <stdexcept>
@@ -65,16 +66,19 @@ std::string generate_client_nonce() {
 }
 
 cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_info info,
-                                                                    const pg_config& config) {
+                                                                    const pg_config& config,
+                                                                    sasl_context& context) {
     uint8_t type_data[INT_32_OCTETS];
     co_await m_sock->read(type_data, INT_32_OCTETS, true);
     auth_type type = static_cast<auth_type>(read_u32_be(type_data));
+
+    uint8_t msg_header[HEADER_SIZE];
+    msg_header[0] = 'p';
+
     switch (type) {
         case auth_type::OK:
             co_return true;
         case auth_type::CLEAR_TEXT_PASSWORD: {
-            uint8_t msg_header[HEADER_SIZE];
-            msg_header[0] = 'p';
             long password_size = config.m_password.size() + 1;
             write_u32_be(&(msg_header[1]), password_size + INT_32_OCTETS);
             co_await m_sock->write(msg_header, HEADER_SIZE);
@@ -87,11 +91,25 @@ cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_inf
             if (sasl_mechanisms.find(SCRAM_SHA256) == sasl_mechanisms.npos) {
                 throw std::runtime_error("SCRAM mechanism not found");
             }
+
+            context.m_client_nonce = generate_client_nonce();
+            std::string init_res = std::format("n,,n={},r={}", config.m_user, context.m_client_nonce);
+            long msg_size = INT_32_OCTETS + sizeof(SCRAM_SHA256) + INT_32_OCTETS + init_res.size();
+            write_u32_be(&(msg_header[1]), msg_size);
+            co_await m_sock->write(msg_header, HEADER_SIZE);
+            co_await m_sock->write(SCRAM_SHA256, sizeof(SCRAM_SHA256));
+            
+            uint8_t arr[INT_32_OCTETS];
+            write_u32_be(arr, init_res.size());
+            co_await m_sock->write(arr, INT_32_OCTETS);
+            co_await m_sock->write(init_res.data(), init_res.size());
             break;
         }
         default:
             throw std::runtime_error("Unrecognized auth method");
     }
+    
+    co_await m_sock->flush();
     co_return false;
 }
 
@@ -122,6 +140,7 @@ cppevent::awaitable_task<void> cppevent::pg_connection::init(std::unique_ptr<soc
     co_await m_sock->flush();
 
     bool auth_success = false;
+    sasl_context context;
 
     while (!auth_success) {
         response_info info = co_await get_response_info(); 
@@ -132,7 +151,7 @@ cppevent::awaitable_task<void> cppevent::pg_connection::init(std::unique_ptr<soc
             case response_type::NEGOTIATE_PROTOCOL_VERSION:
                 throw std::runtime_error("Postgres Protocol Version mismatch");
             case response_type::AUTHENTICATION:
-                auth_success = co_await handle_auth(info, config);
+                auth_success = co_await handle_auth(info, config, context);
                 break;
             default:
                 throw std::runtime_error("Postgres unexpected response");

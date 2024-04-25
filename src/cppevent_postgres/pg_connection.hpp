@@ -27,6 +27,10 @@ struct response_info {
     long m_size;
 };
 
+struct sasl_context {
+    std::string m_client_nonce;
+};
+
 struct pg_config;
 
 class pg_connection {
@@ -36,7 +40,8 @@ private:
 
     awaitable_task<response_info> get_response_info();
 
-    awaitable_task<bool> handle_auth(response_info info, const pg_config& config);
+    awaitable_task<bool> handle_auth(response_info info,
+                                     const pg_config& config, sasl_context& context);
 public:
     pg_connection() = default;
     ~pg_connection();
