@@ -118,7 +118,7 @@ cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_inf
             break;
         }
         case auth_type::SASL_CONTINUE: {
-
+            co_await m_sock->read(context.m_server_first_msg, info.m_size - 2 * INT_32_OCTETS, true);
         }
         default:
             throw std::runtime_error("Unrecognized auth method");
