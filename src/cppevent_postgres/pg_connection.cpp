@@ -4,6 +4,10 @@
 
 #include <cppevent_base/util.hpp>
 #include <cppevent_crypto/encoding.hpp>
+#include <cppevent_crypto/crypto.hpp>
+#include <cppevent_crypto/hmac.hpp>
+#include <cppevent_crypto/pbkdf2.hpp>
+#include <cppevent_crypto/sha256.hpp>
 
 #include <format>
 #include <stdexcept>
@@ -99,7 +103,8 @@ void resolve_server_first_msg(cppevent::sasl_context& context) {
 
 cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_info info,
                                                                     const pg_config& config,
-                                                                    sasl_context& context) {
+                                                                    sasl_context& context,
+                                                                    crypto& crypt) {
     uint8_t type_data[INT_32_OCTETS];
     co_await m_sock->read(type_data, INT_32_OCTETS, true);
     auth_type type = static_cast<auth_type>(read_u32_be(type_data));
@@ -159,7 +164,8 @@ cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_inf
 
 cppevent::awaitable_task<void> cppevent::pg_connection::init(std::unique_ptr<socket>&& sock,
                                                              long* conn_count,
-                                                             const pg_config& config) {
+                                                             const pg_config& config,
+                                                             crypto& crypt) {
     m_sock = std::move(sock);
     m_conn_count = conn_count;
     ++(*m_conn_count);
@@ -195,7 +201,7 @@ cppevent::awaitable_task<void> cppevent::pg_connection::init(std::unique_ptr<soc
             case response_type::NEGOTIATE_PROTOCOL_VERSION:
                 throw std::runtime_error("Postgres Protocol Version mismatch");
             case response_type::AUTHENTICATION:
-                auth_success = co_await handle_auth(info, config, context);
+                auth_success = co_await handle_auth(info, config, context, crypt);
                 break;
             default:
                 throw std::runtime_error("Postgres unexpected response");

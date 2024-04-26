@@ -42,6 +42,8 @@ struct sasl_context {
 
 struct pg_config;
 
+struct crypto;
+
 class pg_connection {
 private:
     std::unique_ptr<socket> m_sock;
@@ -50,7 +52,8 @@ private:
     awaitable_task<response_info> get_response_info();
 
     awaitable_task<bool> handle_auth(response_info info,
-                                     const pg_config& config, sasl_context& context);
+                                     const pg_config& config, sasl_context& context,
+                                     crypto& crypt);
 public:
     pg_connection() = default;
     ~pg_connection();
@@ -59,7 +62,7 @@ public:
     pg_connection& operator=(pg_connection&& other);
 
     awaitable_task<void> init(std::unique_ptr<socket>&& sock, long* conn_count,
-                              const pg_config& config);
+                              const pg_config& config, crypto& crypt);
 };
 
 }

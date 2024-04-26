@@ -7,6 +7,7 @@
 #include <cppevent_base/task.hpp>
 #include <cppevent_base/types.hpp>
 #include <cppevent_net/client_socket.hpp>
+#include <cppevent_crypto/crypto.hpp>
 
 #include <memory>
 #include <queue>
@@ -16,6 +17,7 @@ namespace cppevent {
 class pg_database {
 private:
     event_loop& m_loop;
+    crypto m_crypt;
     pg_config m_config;
     client_socket m_client_sock;
 
