@@ -4,7 +4,6 @@
 #include <openssl/kdf.h>
 
 #include <string_view>
-#include <span>
 #include <cstdint>
 
 namespace cppevent {
@@ -21,7 +20,8 @@ public:
     ~pbkdf2();
     
     void derive(unsigned char* out, long out_len,
-                std::string_view pass, std::span<const uint8_t> salt,
+                const void* pass, long pass_len,
+                const void* salt, long salt_len,
                 uint64_t iter, std::string_view digest);
     
     void reset();
