@@ -50,6 +50,7 @@ void cppevent::scram::resolve_server_first_msg(const std::string& msg) {
         if (i == m_server_first_msg.size() || m_server_first_msg[i] == ',') {
             params.push_back(std::string_view { m_server_first_msg.data() + start, i - start });
             i += 3;
+            start = i;
         } else {
             ++i;
         }
@@ -111,7 +112,7 @@ std::string cppevent::scram::generate_client_final_msg(std::string_view password
     uint8_t server_signature[SHA256_OUTPUT_OCTETS];
     hm.init(salted_password, SHA256_OUTPUT_OCTETS, SHA256_NAME);
     hm.update(reinterpret_cast<unsigned char*>(auth_message.data()), auth_message.size());
-    hm.derive(server_key, &out_l, SHA256_OUTPUT_OCTETS);
+    hm.derive(server_signature, &out_l, SHA256_OUTPUT_OCTETS);
 
     m_expected_server_final_msg = std::format("v={}", 
                                               base64_encode(server_signature, SHA256_OUTPUT_OCTETS));
