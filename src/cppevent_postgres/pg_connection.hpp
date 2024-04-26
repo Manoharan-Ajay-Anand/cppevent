@@ -5,6 +5,9 @@
 #include <cppevent_net/socket.hpp>
 
 #include <memory>
+#include <string>
+#include <string_view>
+#include <vector>
 
 namespace cppevent {
 
@@ -30,7 +33,11 @@ struct response_info {
 struct sasl_context {
     std::string m_client_nonce;
     std::string m_client_first_msg_bare;
+
     std::string m_server_first_msg;
+    std::string_view m_server_nonce;
+    std::vector<uint8_t> m_salt;
+    long m_iterations;
 };
 
 struct pg_config;

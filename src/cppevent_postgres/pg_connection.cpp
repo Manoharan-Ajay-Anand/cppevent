@@ -6,10 +6,7 @@
 #include <cppevent_crypto/encoding.hpp>
 
 #include <format>
-#include <string>
-#include <string_view>
 #include <stdexcept>
-#include <unordered_set>
 
 #include <openssl/rand.h>
 
@@ -67,6 +64,39 @@ std::string generate_client_nonce() {
     return cppevent::base64_encode(nonce_data, CLIENT_NONCE_OCTETS);
 }
 
+constexpr long SERVER_FIRST_MSG_PARAMS_COUNT = 3;
+
+long convert_to_num(std::string_view input) {
+    long result = 0;
+    for (char c : input) {
+        result = result * 10 + (c - '0');
+    }
+    return result;
+}
+
+void resolve_server_first_msg(cppevent::sasl_context& context) {
+    std::string& server_first_msg = context.m_server_first_msg;
+    long start = 2;
+    std::vector<std::string_view> params;
+    for (long i = start; i <= server_first_msg.size();) {
+        if (i == server_first_msg.size() || server_first_msg[i] == ',') {
+            params.push_back(std::string_view { server_first_msg.data() + start, i - start });
+            i += 3;
+        } else {
+            ++i;
+        }
+    }
+    if (params.size() != SERVER_FIRST_MSG_PARAMS_COUNT) {
+        throw std::runtime_error("Not enough params server first message");
+    }
+    if (!params[0].starts_with(context.m_client_nonce)) {
+        throw std::runtime_error("Server nonce doesn't begin with client nonce");
+    }
+    context.m_server_nonce = params[0];
+    context.m_salt = cppevent::base64_decode(params[1]);
+    context.m_iterations = convert_to_num(params[2]);
+}
+
 cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_info info,
                                                                     const pg_config& config,
                                                                     sasl_context& context) {
@@ -119,6 +149,7 @@ cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_inf
         }
         case auth_type::SASL_CONTINUE: {
             co_await m_sock->read(context.m_server_first_msg, info.m_size - 2 * INT_32_OCTETS, true);
+            resolve_server_first_msg(context);
         }
         default:
             throw std::runtime_error("Unrecognized auth method");
