@@ -48,6 +48,27 @@ cppevent::awaitable_task<cppevent::response_info> cppevent::pg_connection::get_r
     co_return response_info { type, size };
 }
 
+class response_header {
+private:
+    uint8_t m_buf[HEADER_SIZE];
+public:
+    void set_type(char c) {
+        m_buf[0] = c;
+    }
+
+    void set_size(long size) {
+        cppevent::write_u32_be(&(m_buf[1]), size + INT_32_OCTETS);
+    }
+
+    const uint8_t* data() {
+        return m_buf;
+    }
+
+    constexpr long size() {
+        return HEADER_SIZE;
+    }
+};
+
 cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_info info,
                                                                     const pg_config& config,
                                                                     scram& scr) {
@@ -55,16 +76,16 @@ cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_inf
     co_await m_sock->read(type_data, INT_32_OCTETS, true);
     auth_type type = static_cast<auth_type>(read_u32_be(type_data));
 
-    uint8_t msg_header[HEADER_SIZE];
-    msg_header[0] = 'p';
+    response_header res_header;
+    res_header.set_type('p');
 
     switch (type) {
         case auth_type::OK:
             co_return true;
         case auth_type::CLEAR_TEXT_PASSWORD: {
             long password_size = config.m_password.size() + 1;
-            write_u32_be(&(msg_header[1]), password_size + INT_32_OCTETS);
-            co_await m_sock->write(msg_header, HEADER_SIZE);
+            res_header.set_size(password_size);
+            co_await m_sock->write(res_header.data(), res_header.size());
             co_await m_sock->write(config.m_password.c_str(), password_size);
             co_await m_sock->flush();
             break;
@@ -78,10 +99,9 @@ cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_inf
 
             std::string client_first_msg = scr.generate_client_first_msg(config.m_user);
 
-            long msg_size = 2* INT_32_OCTETS + sizeof(SCRAM_SHA256) + client_first_msg.size();
-            write_u32_be(&(msg_header[1]), msg_size);
+            res_header.set_size(sizeof(SCRAM_SHA256) + INT_32_OCTETS + client_first_msg.size());
 
-            co_await m_sock->write(msg_header, HEADER_SIZE);
+            co_await m_sock->write(res_header.data(), res_header.size());
             co_await m_sock->write(SCRAM_SHA256, sizeof(SCRAM_SHA256));
             
             uint8_t arr[INT_32_OCTETS];
@@ -96,10 +116,11 @@ cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_inf
             std::string server_first_msg;
             co_await m_sock->read(server_first_msg, info.m_size - 2 * INT_32_OCTETS, true);
             scr.resolve_server_first_msg(server_first_msg);
+
             std::string client_final_msg = scr.generate_client_final_msg(config.m_password);
-            
-            write_u32_be(&(msg_header[1]), client_final_msg.size() + INT_32_OCTETS);
-            co_await m_sock->write(msg_header, HEADER_SIZE);
+            res_header.set_size(client_final_msg.size());
+
+            co_await m_sock->write(res_header.data(), res_header.size());
             co_await m_sock->write(client_final_msg.data(), client_final_msg.size());
             co_await m_sock->flush();
         }
