@@ -23,12 +23,18 @@ private:
     std::string_view m_server_nonce;
     std::vector<uint8_t> m_salt;
     long m_iterations;
+
+    std::string m_expected_server_final_msg;
 public:
     scram(crypto& crypt);
 
     std::string generate_client_first_msg(std::string_view user);
 
     void resolve_server_first_msg(const std::string& msg);
+
+    std::string generate_client_final_msg(std::string_view password);
+
+    bool verify_server_final_msg(const std::string& msg);
 };
 
 }
