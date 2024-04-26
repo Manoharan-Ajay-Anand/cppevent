@@ -13,10 +13,10 @@ cppevent::pbkdf2::~pbkdf2() {
 }
 
 void cppevent::pbkdf2::derive(unsigned char* out, long out_len,
-                              std::string_view pass, std::string_view salt,
+                              std::string_view pass, std::span<const uint8_t> salt,
                               uint64_t iter, std::string_view digest) {
     const char* pass_ptr = pass.data();
-    const char* salt_ptr = salt.data();
+    const char* salt_ptr = reinterpret_cast<const char*>(salt.data());
     const char* digest_ptr = digest.data();
     const OSSL_PARAM params[] = {
         OSSL_PARAM_octet_ptr("pass", &pass_ptr, pass.size()),
