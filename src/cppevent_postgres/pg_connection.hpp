@@ -30,19 +30,9 @@ struct response_info {
     long m_size;
 };
 
-struct sasl_context {
-    std::string m_client_nonce;
-    std::string m_client_first_msg_bare;
-
-    std::string m_server_first_msg;
-    std::string_view m_server_nonce;
-    std::vector<uint8_t> m_salt;
-    long m_iterations;
-};
-
 struct pg_config;
 
-struct crypto;
+class scram;
 
 class pg_connection {
 private:
@@ -52,8 +42,7 @@ private:
     awaitable_task<response_info> get_response_info();
 
     awaitable_task<bool> handle_auth(response_info info,
-                                     const pg_config& config, sasl_context& context,
-                                     crypto& crypt);
+                                     const pg_config& config, scram& scr);
 public:
     pg_connection() = default;
     ~pg_connection();
