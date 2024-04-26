@@ -6,7 +6,7 @@
 
 cppevent::sha256::sha256(crypto& crypt): m_crypt(crypt) {
     m_ctx = EVP_MD_CTX_new();
-    if (EVP_DigestInit(m_ctx, m_crypt.fetch_md("SHA256")) != 1) {
+    if (EVP_DigestInit(m_ctx, m_crypt.fetch_md(SHA256_NAME)) != 1) {
         throw std::runtime_error("sha25g constructor error");
     }
 }

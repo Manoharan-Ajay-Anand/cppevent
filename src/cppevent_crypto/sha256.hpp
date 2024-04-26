@@ -9,6 +9,8 @@ namespace cppevent {
 
 constexpr int SHA256_OUTPUT_OCTETS = 32;
 
+constexpr char SHA256_NAME[] = "SHA256";
+
 class crypto;
 
 class sha256 {
