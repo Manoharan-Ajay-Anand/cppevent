@@ -8,7 +8,7 @@
 #include <format>
 #include <stdexcept>
 
-constexpr long STARTUP_HEADER_SIZE = 8;
+constexpr int STARTUP_HEADER_SIZE = 8;
 constexpr uint32_t POSTGRES_PROTOCOL_MAJOR_VERSION = 3;
 constexpr uint32_t POSTGRES_PROTOCOL_MINOR_VERSION = 0;
 constexpr uint32_t POSTGRES_PROTOCOL = (POSTGRES_PROTOCOL_MAJOR_VERSION << 16) + 
@@ -17,9 +17,9 @@ constexpr uint32_t POSTGRES_PROTOCOL = (POSTGRES_PROTOCOL_MAJOR_VERSION << 16) +
 constexpr char STARTUP_PARAM_USER[] = "user";
 constexpr char STARTUP_PARAM_DATABASE[] = "database";
 
-constexpr long HEADER_SIZE = 5;
+constexpr int HEADER_SIZE = 5;
 
-constexpr long INT_32_OCTETS = 4;
+constexpr int INT_32_OCTETS = 4;
 
 cppevent::pg_connection::~pg_connection() {
     if (m_sock) {
