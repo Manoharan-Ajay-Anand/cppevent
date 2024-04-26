@@ -96,6 +96,19 @@ cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_inf
             std::string server_first_msg;
             co_await m_sock->read(server_first_msg, info.m_size - 2 * INT_32_OCTETS, true);
             scr.resolve_server_first_msg(server_first_msg);
+            std::string client_final_msg = scr.generate_client_final_msg(config.m_password);
+            
+            write_u32_be(&(msg_header[1]), client_final_msg.size() + INT_32_OCTETS);
+            co_await m_sock->write(msg_header, HEADER_SIZE);
+            co_await m_sock->write(client_final_msg.data(), client_final_msg.size());
+            co_await m_sock->flush();
+        }
+        case auth_type::SASL_FINAL: {
+            std::string server_final_msg;
+            co_await m_sock->read(server_final_msg, info.m_size - 2 * INT_32_OCTETS, true);
+            if (!scr.verify_server_final_msg(server_final_msg)) {
+                throw std::runtime_error("SASL Auth unexpected final msg");
+            }
         }
         default:
             throw std::runtime_error("Unrecognized auth method");
