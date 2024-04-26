@@ -1,6 +1,9 @@
 #ifndef CPPEVENT_POSTGRES_SCRAM_HPP
 #define CPPEVENT_POSTGRES_SCRAM_HPP
 
+#include <cppevent_crypto/sha256.hpp>
+
+#include <array>
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -8,9 +11,9 @@
 
 namespace cppevent {
 
-class crypto;
-
 constexpr char SCRAM_SHA256[] = "SCRAM-SHA-256";
+
+using key_buffer = std::array<uint8_t, SHA256_OUTPUT_OCTETS>;
 
 class scram {
 private:
@@ -25,6 +28,12 @@ private:
     long m_iterations;
 
     std::string m_expected_server_final_msg;
+
+    key_buffer generate_salted_password(std::string_view password);
+
+    key_buffer generate_hmac(const key_buffer& key, std::string_view input);
+
+    key_buffer generate_sha(const key_buffer& input);
 public:
     scram(crypto& crypt);
 

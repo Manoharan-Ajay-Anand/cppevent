@@ -4,7 +4,6 @@
 #include <cppevent_crypto/encoding.hpp>
 #include <cppevent_crypto/hmac.hpp>
 #include <cppevent_crypto/pbkdf2.hpp>
-#include <cppevent_crypto/sha256.hpp>
 
 #include <openssl/rand.h>
 
@@ -68,56 +67,71 @@ void cppevent::scram::resolve_server_first_msg(const std::string& msg) {
     m_iterations = convert_to_num(params[2]);
 }
 
-constexpr std::string_view CLIENT_KEY = "Client Key";
-constexpr std::string_view SERVER_KEY = "Server Key";
+cppevent::key_buffer cppevent::scram::generate_salted_password(std::string_view password) {
+    key_buffer result;
+
+    pbkdf2 pb(m_crypt);
+    pb.derive(result.data(), result.size(),
+              password.data(), password.size(), m_salt.data(), m_salt.size(),
+              m_iterations, SHA256_NAME);
+    
+    return result;
+}
+
+cppevent::key_buffer cppevent::scram::generate_hmac(const key_buffer& key, std::string_view input) {
+    key_buffer result;
+    size_t out_l;
+
+    hmac hm(m_crypt);
+    hm.init(key.data(), key.size(), SHA256_NAME);
+    hm.update(reinterpret_cast<const unsigned char*>(input.data()), input.size());
+    hm.derive(result.data(), &out_l, result.size());
+
+    return result;
+}
+
+cppevent::key_buffer cppevent::scram::generate_sha(const key_buffer& input) {
+    key_buffer result;
+
+    sha256 sh(m_crypt);
+    sh.update(input.data(), input.size());
+    sh.derive(result.data());
+
+    return result;
+}
+
+constexpr std::string_view CLIENT_KEY_STR = "Client Key";
+constexpr std::string_view SERVER_KEY_STR = "Server Key";
 
 std::string cppevent::scram::generate_client_final_msg(std::string_view password) {
     std::string client_final_msg_bare = std::format("c=biws,r={}", m_server_nonce);
 
-    uint8_t salted_password[SHA256_OUTPUT_OCTETS];
-    pbkdf2 pb(m_crypt);
-    pb.derive(salted_password, SHA256_OUTPUT_OCTETS, password.data(), password.size(),
-              m_salt.data(), m_salt.size(), m_iterations, SHA256_NAME);
+    key_buffer salted_password = generate_salted_password(password);
     
-    uint8_t client_key[SHA256_OUTPUT_OCTETS];
-    hmac hm(m_crypt);
-    hm.init(salted_password, SHA256_OUTPUT_OCTETS, SHA256_NAME);
-    hm.update(reinterpret_cast<const unsigned char*>(CLIENT_KEY.data()), CLIENT_KEY.size());
-    size_t out_l;
-    hm.derive(client_key, &out_l, SHA256_OUTPUT_OCTETS);
+    key_buffer client_key = generate_hmac(salted_password, CLIENT_KEY_STR);
 
-    uint8_t stored_key[SHA256_OUTPUT_OCTETS];
-    sha256 sh(m_crypt);
-    sh.update(client_key, SHA256_OUTPUT_OCTETS);
-    sh.derive(stored_key);
+    key_buffer stored_key = generate_sha(client_key);
 
     std::string auth_message = std::format("{},{},{}", m_client_first_msg_bare,
                                            m_server_first_msg, client_final_msg_bare);
 
-    uint8_t client_signature[SHA256_OUTPUT_OCTETS];
-    hm.init(stored_key, SHA256_OUTPUT_OCTETS, SHA256_NAME);
-    hm.update(reinterpret_cast<unsigned char*>(auth_message.data()), auth_message.size());
-    hm.derive(client_signature, &out_l, SHA256_OUTPUT_OCTETS);
+    key_buffer client_signature = generate_hmac(stored_key, auth_message);
 
-    uint8_t client_proof[SHA256_OUTPUT_OCTETS];
-    for (long i = 0; i < SHA256_OUTPUT_OCTETS; ++i) {
+    key_buffer client_proof;
+    for (long i = 0; i < client_proof.size(); ++i) {
         client_proof[i] = client_key[i] ^ client_signature[i];
     }
 
-    uint8_t server_key[SHA256_OUTPUT_OCTETS];
-    hm.init(salted_password, SHA256_OUTPUT_OCTETS, SHA256_NAME);
-    hm.update(reinterpret_cast<const unsigned char*>(SERVER_KEY.data()), SERVER_KEY.size());
-    hm.derive(server_key, &out_l, SHA256_OUTPUT_OCTETS);
+    key_buffer server_key = generate_hmac(salted_password, SERVER_KEY_STR);
 
-    uint8_t server_signature[SHA256_OUTPUT_OCTETS];
-    hm.init(salted_password, SHA256_OUTPUT_OCTETS, SHA256_NAME);
-    hm.update(reinterpret_cast<unsigned char*>(auth_message.data()), auth_message.size());
-    hm.derive(server_signature, &out_l, SHA256_OUTPUT_OCTETS);
+    key_buffer server_signature = generate_hmac(server_key, auth_message);
 
-    m_expected_server_final_msg = std::format("v={}", 
-                                              base64_encode(server_signature, SHA256_OUTPUT_OCTETS));
-    return std::format("{},p={}", client_final_msg_bare,
-                                  base64_encode(client_proof, SHA256_OUTPUT_OCTETS));
+    m_expected_server_final_msg = 
+            std::format("v={}", base64_encode(server_signature.data(), server_signature.size()));
+
+    return std::format("{},p={}",
+                        client_final_msg_bare,
+                        base64_encode(client_proof.data(), client_proof.size()));
 }
 
 bool cppevent::scram::verify_server_final_msg(const std::string& msg) {
