@@ -5,6 +5,10 @@
 
 #include <cppevent_base/util.hpp>
 
+#include <cppevent_crypto/crypto.hpp>
+#include <cppevent_crypto/random.hpp>
+#include <cppevent_crypto/encoding.hpp>
+
 #include <format>
 #include <stdexcept>
 
@@ -69,6 +73,8 @@ public:
     }
 };
 
+constexpr long CLIENT_NONCE_OCTETS = 24;
+
 cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_info info,
                                                                     const pg_config& config,
                                                                     scram& scr) {
@@ -97,7 +103,8 @@ cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_inf
                 throw std::runtime_error("SCRAM mechanism not found");
             }
 
-            std::string client_first_msg = scr.generate_client_first_msg(config.m_user);
+            std::string c_nonce = generate_random_string<CLIENT_NONCE_OCTETS>(base64_encode);
+            std::string client_first_msg = scr.generate_client_first_msg(config.m_user, c_nonce);
 
             res_header.set_size(sizeof(SCRAM_SHA256) + INT_32_OCTETS + client_first_msg.size());
 

@@ -18,8 +18,8 @@ void cppevent::pbkdf2::derive(unsigned char* out, long out_len,
                               uint64_t iter, std::string_view digest) {
     const char* digest_ptr = digest.data();
     const OSSL_PARAM params[] = {
-        OSSL_PARAM_octet_ptr("pass", &pass, pass_len),
-        OSSL_PARAM_octet_ptr("salt", &salt, salt_len),
+        OSSL_PARAM_octet_ptr("pass", &pass, static_cast<size_t>(pass_len)),
+        OSSL_PARAM_octet_ptr("salt", &salt, static_cast<size_t>(salt_len)),
         OSSL_PARAM_uint64("iter", &iter),
         OSSL_PARAM_utf8_ptr("digest", &digest_ptr, digest.size()),
         OSSL_PARAM_END

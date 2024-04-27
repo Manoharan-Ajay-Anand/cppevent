@@ -37,7 +37,7 @@ private:
 public:
     scram(crypto& crypt);
 
-    std::string generate_client_first_msg(std::string_view user);
+    std::string generate_client_first_msg(std::string_view user, std::string_view client_nonce);
 
     void resolve_server_first_msg(const std::string& msg);
 

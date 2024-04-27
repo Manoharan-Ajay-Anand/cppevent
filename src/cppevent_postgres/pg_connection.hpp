@@ -32,6 +32,8 @@ struct response_info {
 
 struct pg_config;
 
+class crypto;
+
 class scram;
 
 class pg_connection {

@@ -5,8 +5,6 @@
 #include <cppevent_crypto/hmac.hpp>
 #include <cppevent_crypto/pbkdf2.hpp>
 
-#include <openssl/rand.h>
-
 #include <format>
 
 constexpr char GS2_HEADER[] = "n,,";
@@ -14,19 +12,10 @@ constexpr char GS2_HEADER[] = "n,,";
 cppevent::scram::scram(crypto& crypt): m_crypt(crypt) {
 }
 
-constexpr long CLIENT_NONCE_OCTETS = 24;
-
-std::string generate_client_nonce() {
-    uint8_t nonce_data[CLIENT_NONCE_OCTETS];
-    if (RAND_bytes(nonce_data, CLIENT_NONCE_OCTETS) != 1) {
-        throw std::runtime_error("Error generating RAND_BYTES");
-    }
-    return cppevent::base64_encode(nonce_data, CLIENT_NONCE_OCTETS);
-}
-
-std::string cppevent::scram::generate_client_first_msg(std::string_view user) {
-    m_client_nonce = generate_client_nonce();
-    m_client_first_msg_bare = std::format("n={},r={}", user, m_client_nonce);
+std::string cppevent::scram::generate_client_first_msg(std::string_view user,
+                                                       std::string_view client_nonce) {
+    m_client_nonce = client_nonce;
+    m_client_first_msg_bare = std::format("n={},r={}", user, client_nonce);
     return std::format("{}{}", GS2_HEADER, m_client_first_msg_bare);
 }
 
@@ -47,7 +36,8 @@ void cppevent::scram::resolve_server_first_msg(const std::string& msg) {
     std::vector<std::string_view> params;
     for (long i = start; i <= m_server_first_msg.size();) {
         if (i == m_server_first_msg.size() || m_server_first_msg[i] == ',') {
-            params.push_back(std::string_view { m_server_first_msg.data() + start, i - start });
+            size_t len = static_cast<size_t>(i - start);
+            params.push_back(std::string_view { m_server_first_msg.data() + start, len });
             i += 3;
             start = i;
         } else {
