@@ -80,7 +80,9 @@ cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_inf
                                                                     scram& scr) {
     uint8_t type_data[INT_32_OCTETS];
     co_await m_sock->read(type_data, INT_32_OCTETS, true);
+
     auth_type type = static_cast<auth_type>(read_u32_be(type_data));
+    long msg_size = info.m_size - INT_32_OCTETS;
 
     response_header res_header;
     res_header.set_type('p');
@@ -98,7 +100,7 @@ cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_inf
         }
         case auth_type::SASL: {
             std::string sasl_mechanisms;
-            co_await m_sock->read(sasl_mechanisms, info.m_size - INT_32_OCTETS, true);
+            co_await m_sock->read(sasl_mechanisms, msg_size, true);
             if (sasl_mechanisms.find(SCRAM_SHA256) == sasl_mechanisms.npos) {
                 throw std::runtime_error("SCRAM mechanism not found");
             }
@@ -121,7 +123,7 @@ cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_inf
         }
         case auth_type::SASL_CONTINUE: {
             std::string server_first_msg;
-            co_await m_sock->read(server_first_msg, info.m_size - 2 * INT_32_OCTETS, true);
+            co_await m_sock->read(server_first_msg, msg_size, true);
             scr.resolve_server_first_msg(server_first_msg);
 
             std::string client_final_msg = scr.generate_client_final_msg(config.m_password);
@@ -130,13 +132,15 @@ cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_inf
             co_await m_sock->write(res_header.data(), res_header.size());
             co_await m_sock->write(client_final_msg.data(), client_final_msg.size());
             co_await m_sock->flush();
+            break;
         }
         case auth_type::SASL_FINAL: {
             std::string server_final_msg;
-            co_await m_sock->read(server_final_msg, info.m_size - 2 * INT_32_OCTETS, true);
+            co_await m_sock->read(server_final_msg, msg_size, true);
             if (!scr.verify_server_final_msg(server_final_msg)) {
                 throw std::runtime_error("SASL Auth unexpected final msg");
             }
+            break;
         }
         default:
             throw std::runtime_error("Unrecognized auth method");
