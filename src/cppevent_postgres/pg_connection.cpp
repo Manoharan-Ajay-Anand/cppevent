@@ -165,7 +165,7 @@ cppevent::awaitable_task<void> cppevent::pg_connection::init(std::unique_ptr<soc
 
     uint8_t header[STARTUP_HEADER_SIZE];
     write_u32_be(header, STARTUP_HEADER_SIZE + message.size());
-    write_u32_be(header, POSTGRES_PROTOCOL);
+    write_u32_be(&(header[4]), POSTGRES_PROTOCOL);
 
     co_await m_sock->write(header, STARTUP_HEADER_SIZE);
     co_await m_sock->write(message.data(), message.size());
