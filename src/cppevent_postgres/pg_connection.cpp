@@ -9,8 +9,11 @@
 #include <cppevent_crypto/random.hpp>
 #include <cppevent_crypto/encoding.hpp>
 
+#include <array>
+#include <string>
 #include <format>
 #include <stdexcept>
+#include <iostream>
 
 constexpr int STARTUP_HEADER_SIZE = 8;
 constexpr uint32_t POSTGRES_PROTOCOL_MAJOR_VERSION = 3;
@@ -75,7 +78,7 @@ public:
 
 constexpr long CLIENT_NONCE_OCTETS = 24;
 
-cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_info info,
+cppevent::awaitable_task<void> cppevent::pg_connection::handle_auth(response_info info,
                                                                     const pg_config& config,
                                                                     scram& scr) {
     uint8_t type_data[INT_32_OCTETS];
@@ -89,7 +92,7 @@ cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_inf
 
     switch (type) {
         case auth_type::OK:
-            co_return true;
+            break;
         case auth_type::CLEAR_TEXT_PASSWORD: {
             long password_size = config.m_password.size() + 1;
             res_header.set_size(password_size);
@@ -145,7 +148,6 @@ cppevent::awaitable_task<bool> cppevent::pg_connection::handle_auth(response_inf
         default:
             throw std::runtime_error("Unrecognized auth method");
     }
-    co_return false;
 }
 
 cppevent::awaitable_task<void> cppevent::pg_connection::init(std::unique_ptr<socket>&& sock,
@@ -175,10 +177,10 @@ cppevent::awaitable_task<void> cppevent::pg_connection::init(std::unique_ptr<soc
     co_await m_sock->write(message.data(), message.size());
     co_await m_sock->flush();
 
-    bool auth_success = false;
+    bool query_ready = false;
     scram scr(crypt);
 
-    while (!auth_success) {
+    while (!query_ready) {
         response_info info = co_await get_response_info(); 
 
         switch (info.m_type) {
@@ -187,8 +189,23 @@ cppevent::awaitable_task<void> cppevent::pg_connection::init(std::unique_ptr<soc
             case response_type::NEGOTIATE_PROTOCOL_VERSION:
                 throw std::runtime_error("Postgres Protocol Version mismatch");
             case response_type::AUTHENTICATION:
-                auth_success = co_await handle_auth(info, config, scr);
+                co_await handle_auth(info, config, scr);
                 break;
+            case response_type::BACKEND_KEY_DATA: {
+                std::array<uint8_t, 2 * INT_32_OCTETS> arr;
+                co_await m_sock->read(arr.data(), arr.size(), true);
+                break;
+            }
+            case response_type::PARAMETER_STATUS: {
+                std::string content;
+                co_await m_sock->read(content, info.m_size, true);
+                break;
+            }
+            case response_type::READY_FOR_QUERY: {
+                uint8_t status = co_await m_sock->read_c(true);
+                query_ready = true;
+                break;
+            }
             default:
                 throw std::runtime_error("Postgres unexpected response");
         }

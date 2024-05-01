@@ -5,9 +5,6 @@
 #include <cppevent_net/socket.hpp>
 
 #include <memory>
-#include <string>
-#include <string_view>
-#include <vector>
 
 namespace cppevent {
 
@@ -22,7 +19,10 @@ enum class auth_type {
 enum class response_type: char {
     ERROR_RESPONSE = 'E',
     NEGOTIATE_PROTOCOL_VERSION = 'v',
-    AUTHENTICATION = 'R'
+    AUTHENTICATION = 'R',
+    BACKEND_KEY_DATA = 'K',
+    PARAMETER_STATUS = 'S',
+    READY_FOR_QUERY = 'Z'
 };
 
 struct response_info {
@@ -43,7 +43,7 @@ private:
 
     awaitable_task<response_info> get_response_info();
 
-    awaitable_task<bool> handle_auth(response_info info,
+    awaitable_task<void> handle_auth(response_info info,
                                      const pg_config& config, scram& scr);
 public:
     pg_connection() = default;
