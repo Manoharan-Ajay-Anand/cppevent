@@ -28,6 +28,12 @@ constexpr int HEADER_SIZE = 5;
 
 constexpr int INT_32_OCTETS = 4;
 
+cppevent::pg_connection::pg_connection(std::unique_ptr<socket>&& sock,
+                                       long* conn_count): m_sock(std::move(sock)),
+                                                          m_conn_count(conn_count) {
+    ++(*m_conn_count);
+}
+
 cppevent::pg_connection::~pg_connection() {
     if (m_sock) {
         --(*m_conn_count);
@@ -150,14 +156,8 @@ cppevent::awaitable_task<void> cppevent::pg_connection::handle_auth(response_inf
     }
 }
 
-cppevent::awaitable_task<void> cppevent::pg_connection::init(std::unique_ptr<socket>&& sock,
-                                                             long* conn_count,
-                                                             const pg_config& config,
+cppevent::awaitable_task<void> cppevent::pg_connection::init(const pg_config& config,
                                                              crypto& crypt) {
-    m_sock = std::move(sock);
-    m_conn_count = conn_count;
-    ++(*m_conn_count);
-
     std::string message;
     message.append(STARTUP_PARAM_USER, sizeof(STARTUP_PARAM_USER));
     message.append(config.m_user);
