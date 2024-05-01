@@ -124,6 +124,6 @@ std::string cppevent::scram::generate_client_final_msg(std::string_view password
                         base64_encode(client_proof.data(), client_proof.size()));
 }
 
-bool cppevent::scram::verify_server_final_msg(const std::string& msg) {
+bool cppevent::scram::verify_server_final_msg(std::string_view msg) {
     return msg == m_expected_server_final_msg;
 }

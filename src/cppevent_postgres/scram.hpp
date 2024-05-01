@@ -43,7 +43,7 @@ public:
 
     std::string generate_client_final_msg(std::string_view password);
 
-    bool verify_server_final_msg(const std::string& msg);
+    bool verify_server_final_msg(std::string_view msg);
 };
 
 }
