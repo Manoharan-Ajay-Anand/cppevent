@@ -43,14 +43,14 @@ private:
 
     awaitable_task<void> handle_auth(response_info info,
                                      const pg_config& config, scram& scr);
+
+    awaitable_task<response_info> get_response_info();
 public:
     pg_connection(std::unique_ptr<socket>&& sock, long* conn_count);
     ~pg_connection();
 
     pg_connection(pg_connection&& other);
     pg_connection& operator=(pg_connection&& other);
-
-    awaitable_task<response_info> get_response_info();
 
     awaitable_task<void> init(const pg_config& config, crypto& crypt);
 
