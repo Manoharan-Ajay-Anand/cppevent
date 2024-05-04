@@ -191,16 +191,10 @@ cppevent::awaitable_task<void> cppevent::pg_connection::init(const pg_config& co
             case response_type::AUTHENTICATION:
                 co_await handle_auth(info, config, scr);
                 break;
-            case response_type::BACKEND_KEY_DATA: {
-                std::array<uint8_t, 2 * INT_32_OCTETS> arr;
-                co_await m_sock->read(arr.data(), arr.size(), true);
+            case response_type::BACKEND_KEY_DATA:
+            case response_type::PARAMETER_STATUS:
+                co_await m_sock->skip(info.m_size, true);
                 break;
-            }
-            case response_type::PARAMETER_STATUS: {
-                std::string content;
-                co_await m_sock->read(content, info.m_size, true);
-                break;
-            }
             case response_type::READY_FOR_QUERY: {
                 uint8_t status = co_await m_sock->read_c(true);
                 query_ready = true;
@@ -210,4 +204,16 @@ cppevent::awaitable_task<void> cppevent::pg_connection::init(const pg_config& co
                 throw std::runtime_error("Postgres unexpected response");
         }
     }
+}
+
+cppevent::awaitable_task<void> cppevent::pg_connection::query(const std::string& q) {
+    response_header res_header;
+    res_header.set_type('Q');
+
+    const long query_len = q.size() + 1;
+    res_header.set_size(query_len);
+
+    co_await m_sock->write(res_header.data(), res_header.size());
+    co_await m_sock->write(q.c_str(), query_len);
+    co_await m_sock->flush();
 }

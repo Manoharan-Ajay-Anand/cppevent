@@ -41,8 +41,6 @@ private:
     std::unique_ptr<socket> m_sock;
     long* m_conn_count;
 
-    awaitable_task<response_info> get_response_info();
-
     awaitable_task<void> handle_auth(response_info info,
                                      const pg_config& config, scram& scr);
 public:
@@ -52,7 +50,11 @@ public:
     pg_connection(pg_connection&& other);
     pg_connection& operator=(pg_connection&& other);
 
+    awaitable_task<response_info> get_response_info();
+
     awaitable_task<void> init(const pg_config& config, crypto& crypt);
+
+    awaitable_task<void> query(const std::string& q);
 };
 
 }
