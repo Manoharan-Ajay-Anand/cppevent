@@ -40,6 +40,7 @@ class pg_connection {
 private:
     std::unique_ptr<socket> m_sock;
     long* m_conn_count;
+    bool m_query_ready = false;
 
     awaitable_task<void> handle_auth(response_info info,
                                      const pg_config& config, scram& scr);

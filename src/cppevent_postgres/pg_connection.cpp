@@ -43,11 +43,13 @@ cppevent::pg_connection::~pg_connection() {
 cppevent::pg_connection::pg_connection(pg_connection&& other) {
     m_sock = std::move(other.m_sock);
     m_conn_count = other.m_conn_count;
+    m_query_ready = other.m_query_ready;
 }
 
 cppevent::pg_connection& cppevent::pg_connection::operator=(pg_connection&& other) {
     m_sock = std::move(other.m_sock);
     m_conn_count = other.m_conn_count;
+    m_query_ready = other.m_query_ready;
     return *this;
 }
 
@@ -177,10 +179,9 @@ cppevent::awaitable_task<void> cppevent::pg_connection::init(const pg_config& co
     co_await m_sock->write(message.data(), message.size());
     co_await m_sock->flush();
 
-    bool query_ready = false;
     scram scr(crypt);
 
-    while (!query_ready) {
+    while (!m_query_ready) {
         response_info info = co_await get_response_info(); 
 
         switch (info.m_type) {
@@ -196,8 +197,8 @@ cppevent::awaitable_task<void> cppevent::pg_connection::init(const pg_config& co
                 co_await m_sock->skip(info.m_size, true);
                 break;
             case response_type::READY_FOR_QUERY: {
-                uint8_t status = co_await m_sock->read_c(true);
-                query_ready = true;
+                co_await m_sock->skip(info.m_size, true);
+                m_query_ready = true;
                 break;
             }
             default:
@@ -207,6 +208,14 @@ cppevent::awaitable_task<void> cppevent::pg_connection::init(const pg_config& co
 }
 
 cppevent::awaitable_task<void> cppevent::pg_connection::query(const std::string& q) {
+    while (!m_query_ready) {
+        response_info info = co_await get_response_info();
+        co_await m_sock->skip(info.m_size, true);
+        if (info.m_type == response_type::READY_FOR_QUERY) {
+            m_query_ready = true;
+        }
+    }
+
     response_header res_header;
     res_header.set_type('Q');
 
@@ -216,4 +225,6 @@ cppevent::awaitable_task<void> cppevent::pg_connection::query(const std::string&
     co_await m_sock->write(res_header.data(), res_header.size());
     co_await m_sock->write(q.c_str(), query_len);
     co_await m_sock->flush();
+
+    m_query_ready = false;
 }
