@@ -228,3 +228,34 @@ cppevent::awaitable_task<void> cppevent::pg_connection::query(const std::string&
 
     m_query_ready = false;
 }
+
+cppevent::awaitable_task<cppevent::pg_result> cppevent::pg_connection::get_result() {
+    pg_result result;
+    if (m_query_ready) {
+        throw std::runtime_error("pg_connection get_result: no query specified");
+    }
+    while (result.get_type() == result_type::PENDING) {
+        response_info info = co_await get_response_info();
+        switch (info.m_type) {
+            case response_type::ROW_DESCRIPTION:
+                break;
+            case response_type::DATA_ROW:
+                break;
+            case response_type::COMMAND_COMPLETE: {
+                std::string tag;
+                co_await m_sock->read(tag, info.m_size, true);
+                tag.pop_back();
+                result.set_command_tag(std::move(tag));
+                break;
+            }
+            case response_type::EMPTY_QUERY_RESPONSE:
+            case response_type::ERROR_RESPONSE:
+                result.set_error();
+            case response_type::NOTICE_RESPONSE:
+                m_sock->skip(info.m_size, true);
+                break;
+            default:
+                throw std::runtime_error("pg_connection get_result: unknown response type");
+        }
+    }
+}

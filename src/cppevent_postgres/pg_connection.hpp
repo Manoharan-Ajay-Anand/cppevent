@@ -1,6 +1,8 @@
 #ifndef CPPEVENT_POSTGRES_PG_CONNECTION_HPP
 #define CPPEVENT_POSTGRES_PG_CONNECTION_HPP
 
+#include "pg_result.hpp"
+
 #include <cppevent_base/task.hpp>
 #include <cppevent_net/socket.hpp>
 
@@ -22,7 +24,12 @@ enum class response_type: char {
     AUTHENTICATION = 'R',
     BACKEND_KEY_DATA = 'K',
     PARAMETER_STATUS = 'S',
-    READY_FOR_QUERY = 'Z'
+    READY_FOR_QUERY = 'Z',
+    NOTICE_RESPONSE = 'N',
+    EMPTY_QUERY_RESPONSE = 'I',
+    COMMAND_COMPLETE = 'C',
+    DATA_ROW = 'D',
+    ROW_DESCRIPTION = 'T'
 };
 
 struct response_info {
@@ -56,6 +63,8 @@ public:
     awaitable_task<void> init(const pg_config& config, crypto& crypt);
 
     awaitable_task<void> query(const std::string& q);
+
+    awaitable_task<pg_result> get_result();
 };
 
 }
