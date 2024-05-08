@@ -17,17 +17,15 @@ cppevent::e_id cppevent::event_callback::get_id() const {
 }
 
 void cppevent::event_callback::set_handle(std::coroutine_handle<> handle) {
-    if (m_handle_opt) {
+    if (m_suspended.has_handle()) {
         throw std::runtime_error("event_callback set_handle: handle already set");
     }
-    m_handle_opt = handle;
+    m_suspended.store_handle(handle);
 }
 
 void cppevent::event_callback::notify(e_status status) {
     m_status_opt = status;
-    std::coroutine_handle<> res_handle = m_handle_opt.value_or(std::noop_coroutine());
-    m_handle_opt.reset();
-    res_handle.resume();
+    m_suspended.retrieve_handle().resume();
 }
 
 bool cppevent::event_callback::has_status() const {
@@ -39,7 +37,7 @@ cppevent::e_status cppevent::event_callback::get_status() {
 }
 
 void cppevent::event_callback::reset() {
-    m_handle_opt.reset();
+    m_suspended.reset();
     m_status_opt.reset();
 }
 

@@ -11,14 +11,14 @@ namespace cppevent {
 
 struct output_task_awaiter {
     std::queue<output_record>& m_out_records;
-    coroutine_opt& m_output_handle_opt;
+    suspended_coro& m_suspended_output;
 
     bool await_ready() {
         return !m_out_records.empty();
     }
 
     void await_suspend(std::coroutine_handle<> handle) {
-        m_output_handle_opt = handle;
+        m_suspended_output.store_handle(handle);
     }
 
     void await_resume() {}
@@ -32,12 +32,7 @@ bool cppevent::fcgi_write_awaiter::await_ready() {
 
 std::coroutine_handle<> cppevent::fcgi_write_awaiter::await_suspend(std::coroutine_handle<> handle) {
     m_out_records.push({ m_type, m_req_id, m_src, m_size, handle });
-    std::coroutine_handle<> res_handle = std::noop_coroutine();
-    if (m_output_handle_opt.has_value()) {
-        res_handle = m_output_handle_opt.value();
-        m_output_handle_opt.reset();
-    }
-    return res_handle;
+    return m_suspended_output.retrieve_handle();
 }
 
 void cppevent::fcgi_write_awaiter::await_resume() {
@@ -50,7 +45,7 @@ constexpr uint8_t PADDING_DATA[cppevent::FCGI_MAX_PADDING] = {};
 
 cppevent::awaitable_task<void> cppevent::output_control::begin_res_task(socket& sock) {
     while (true) {
-        co_await output_task_awaiter { m_out_records, m_output_handle_opt };
+        co_await output_task_awaiter { m_out_records, m_suspended_output };
         output_record& o = m_out_records.front();
         if (!m_error) {
             record r {
@@ -81,6 +76,6 @@ cppevent::fcgi_write_awaiter cppevent::output_control::write(long m_type,
                                                              long m_req_id,
                                                              const void* m_src, long m_size) {
     return { 
-        m_type, m_req_id, m_src, m_size, m_out_records, m_output_handle_opt, m_error
+        m_type, m_req_id, m_src, m_size, m_out_records, m_suspended_output, m_error
     };
 }

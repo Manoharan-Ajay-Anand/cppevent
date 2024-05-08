@@ -3,6 +3,7 @@
 
 #include "types.hpp"
 #include "status_awaiter.hpp"
+#include "suspended_coro.hpp"
 
 #include <optional>
 #include <coroutine>
@@ -17,7 +18,7 @@ private:
     event_bus& m_bus;
 
     std::optional<e_status> m_status_opt;
-    std::optional<std::coroutine_handle<>> m_handle_opt;
+    suspended_coro m_suspended;
 public:
     event_callback(event_bus& bus);
     ~event_callback();

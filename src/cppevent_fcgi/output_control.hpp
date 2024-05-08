@@ -5,9 +5,9 @@
 
 #include <queue>
 #include <coroutine>
-#include <optional>
 
 #include <cppevent_base/task.hpp>
+#include <cppevent_base/suspended_coro.hpp>
 
 namespace cppevent {
 
@@ -28,7 +28,7 @@ struct fcgi_write_awaiter {
     long m_size;
 
     std::queue<output_record>& m_out_records;
-    coroutine_opt& m_output_handle_opt;
+    suspended_coro& m_suspended_output;
     bool& m_error;
 
     bool await_ready();
@@ -42,7 +42,7 @@ class output_control {
 private:
     bool m_error = false;
 
-    coroutine_opt m_output_handle_opt;
+    suspended_coro m_suspended_output;
 
     std::queue<output_record> m_out_records;
 
