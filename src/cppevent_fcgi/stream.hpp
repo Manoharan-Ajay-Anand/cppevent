@@ -8,19 +8,18 @@
 #include <optional>
 
 #include <cppevent_base/task.hpp>
+#include <cppevent_base/suspended_coro.hpp>
 
 namespace cppevent {
 
 class socket;
 
-class event_loop;
-
 class stream {
 private:
     socket& m_conn;
 
-    coroutine_opt m_producer;
-    coroutine_opt m_consumer;
+    suspended_coro m_producer;
+    suspended_coro m_consumer;
     
     long m_remaining = 0;
     bool m_ended = false;

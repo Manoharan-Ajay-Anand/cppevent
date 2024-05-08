@@ -1,7 +1,5 @@
 #include "stream.hpp"
 
-#include <cppevent_base/event_loop.hpp>
-
 #include <cppevent_net/socket.hpp>
 
 #include <algorithm>

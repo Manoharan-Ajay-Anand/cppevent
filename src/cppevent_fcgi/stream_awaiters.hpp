@@ -5,11 +5,11 @@
 
 namespace cppevent {
 
-class event_loop;
+class suspended_coro;
 
 struct stream_update_awaiter {
-    coroutine_opt& m_producer;
-    coroutine_opt& m_consumer;
+    suspended_coro& m_producer;
+    suspended_coro& m_consumer;
     bool m_ended;
 
     bool await_ready();
@@ -20,8 +20,8 @@ struct stream_update_awaiter {
 };
 
 struct stream_readable_awaiter {
-    coroutine_opt& m_producer;
-    coroutine_opt& m_consumer;
+    suspended_coro& m_producer;
+    suspended_coro& m_consumer;
     long& m_remaining;
     bool& m_ended;
 

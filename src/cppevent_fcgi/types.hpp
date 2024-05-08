@@ -17,8 +17,6 @@ enum class REQUEST_METHOD {
 
 using request_map = std::unordered_map<int, std::unique_ptr<request>>;
 
-using coroutine_opt = std::optional<std::coroutine_handle<>>;
-
 }
 
 #endif
