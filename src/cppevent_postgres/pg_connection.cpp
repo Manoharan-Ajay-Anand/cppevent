@@ -239,19 +239,18 @@ cppevent::awaitable_task<cppevent::pg_result> cppevent::pg_connection::get_resul
         response_info info = co_await get_response_info();
         switch (info.m_type) {
             case response_type::ROW_DESCRIPTION: {
-                std::array<uint8_t, INT_16_OCTETS> num_data;
-                co_await m_sock->read(num_data.data(), num_data.size(), true);
-                int num_cols = read_u16_be(num_data.data());
+                std::vector<uint8_t> desc_data(info.m_size);
+                co_await m_sock->read(desc_data.data(), desc_data.size(), true);
+                int num_cols = read_u16_be(desc_data.data());
+                uint8_t* data_p = desc_data.data() + INT_16_OCTETS;
                 for (int i = 0; i < num_cols; ++i) {
                     std::string col_name;
-                    for (int c = co_await m_sock->read_c(true);
-                             c != 0;
-                             c = co_await m_sock->read_c(true)) {
-                        col_name.push_back(static_cast<char>(c));
+                    for (; *data_p != 0; ++data_p) {
+                        col_name.push_back(static_cast<char>(*data_p));
                     }
-                    co_await m_sock->skip(4 * INT_32_OCTETS, true);
-                    co_await m_sock->read(num_data.data(), num_data.size(), true);
-                    format_code col_code = static_cast<format_code>(read_u16_be(num_data.data()));
+                    data_p += 1 + 4 * INT_32_OCTETS;
+                    format_code col_code = static_cast<format_code>(read_u16_be(data_p));
+                    data_p += INT_16_OCTETS;
                     result.add_column({ std::move(col_name), col_code });
                 }
                 break;
@@ -275,4 +274,5 @@ cppevent::awaitable_task<cppevent::pg_result> cppevent::pg_connection::get_resul
                 throw std::runtime_error("pg_connection get_result: unknown response type");
         }
     }
+    co_return std::move(result);
 }
