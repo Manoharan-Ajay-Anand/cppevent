@@ -27,6 +27,7 @@ constexpr char STARTUP_PARAM_DATABASE[] = "database";
 constexpr int HEADER_SIZE = 5;
 
 constexpr int INT_32_OCTETS = 4;
+constexpr int INT_16_OCTETS = 2;
 
 cppevent::pg_connection::pg_connection(std::unique_ptr<socket>&& sock,
                                        long* conn_count): m_sock(std::move(sock)),
@@ -237,8 +238,24 @@ cppevent::awaitable_task<cppevent::pg_result> cppevent::pg_connection::get_resul
     while (result.get_type() == result_type::PENDING) {
         response_info info = co_await get_response_info();
         switch (info.m_type) {
-            case response_type::ROW_DESCRIPTION:
+            case response_type::ROW_DESCRIPTION: {
+                std::array<uint8_t, INT_16_OCTETS> num_data;
+                co_await m_sock->read(num_data.data(), num_data.size(), true);
+                int num_cols = read_u16_be(num_data.data());
+                for (int i = 0; i < num_cols; ++i) {
+                    std::string col_name;
+                    for (int c = co_await m_sock->read_c(true);
+                             c != 0;
+                             c = co_await m_sock->read_c(true)) {
+                        col_name.push_back(static_cast<char>(c));
+                    }
+                    co_await m_sock->skip(4 * INT_32_OCTETS, true);
+                    co_await m_sock->read(num_data.data(), num_data.size(), true);
+                    format_code col_code = static_cast<format_code>(read_u16_be(num_data.data()));
+                    result.add_column({ std::move(col_name), col_code });
+                }
                 break;
+            }
             case response_type::DATA_ROW:
                 break;
             case response_type::COMMAND_COMPLETE: {

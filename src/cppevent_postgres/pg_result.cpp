@@ -8,6 +8,10 @@ void cppevent::pg_result::set_error() {
     m_type = result_type::ERROR;
 }
 
+void cppevent::pg_result::add_column(pg_column&& col) {
+    m_columns.push_back(std::move(col));
+}
+
 void cppevent::pg_result::add_row(std::vector<std::string>&& row) {
     m_rows.push_back(std::move(row));
 }
