@@ -20,7 +20,7 @@ void cppevent::pg_result::add_column(pg_column col) {
     m_columns.push_back(col);
 }
 
-void cppevent::pg_result::add_row(std::vector<std::span<uint8_t>>&& row) {
+void cppevent::pg_result::add_row(std::vector<pg_value>&& row) {
     m_rows.push_back(std::move(row));
 }
 

@@ -25,6 +25,15 @@ struct pg_column {
     format_code m_code;
 };
 
+struct pg_value {
+    uint8_t* m_ptr;
+    long m_size;
+
+    bool is_null() {
+        return m_size < 0;
+    }
+};
+
 class pg_result {
 private:
     std::string m_cmd_tag;
@@ -33,7 +42,7 @@ private:
     std::vector<std::vector<uint8_t>> m_row_data;
 
     std::vector<pg_column> m_columns;
-    std::vector<std::vector<std::span<uint8_t>>> m_rows;
+    std::vector<std::vector<pg_value>> m_rows;
 
     result_type m_type = result_type::PENDING;
 
@@ -47,7 +56,7 @@ public:
 
     void add_column(pg_column col);
 
-    void add_row(std::vector<std::span<uint8_t>>&& row);
+    void add_row(std::vector<pg_value>&& row);
 
     void set_command_tag(std::string&& tag);
     std::string_view get_command_tag() const;

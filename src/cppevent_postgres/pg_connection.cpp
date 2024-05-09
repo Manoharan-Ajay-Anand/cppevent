@@ -259,8 +259,24 @@ cppevent::awaitable_task<cppevent::pg_result> cppevent::pg_connection::get_resul
                 }
                 break;
             }
-            case response_type::DATA_ROW:
+            case response_type::DATA_ROW: {
+                std::vector<uint8_t> row_data(info.m_size);
+                uint8_t* data_p = row_data.data();
+                result.add_row_data(std::move(row_data));
+                co_await m_sock->read(data_p, info.m_size, true);
+
+                std::vector<pg_value> row;
+                int num_cols = read_u16_be(data_p);
+                data_p += INT_16_OCTETS;
+                for (int i = 0; i < num_cols; ++i) {
+                    int32_t val_len = static_cast<int32_t>(read_u32_be(data_p));
+                    data_p += INT_32_OCTETS;
+                    row.push_back(pg_value { data_p, val_len });
+                    if (val_len > 0) data_p += val_len;
+                }
+                result.add_row(std::move(row));
                 break;
+            }
             case response_type::COMMAND_COMPLETE: {
                 std::string tag;
                 co_await m_sock->read(tag, info.m_size, true);
