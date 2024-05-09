@@ -1,9 +1,11 @@
 #ifndef CPPEVENT_POSTGRES_PG_RESULT_HPP
 #define CPPEVENT_POSTGRES_PG_RESULT_HPP
 
+#include <cstdint>
 #include <vector>
 #include <string>
 #include <string_view>
+#include <span>
 
 namespace cppevent {
 
@@ -19,15 +21,19 @@ enum class format_code {
 };
 
 struct pg_column {
-    std::string m_name;
+    std::string_view m_name;
     format_code m_code;
 };
 
 class pg_result {
 private:
     std::string m_cmd_tag;
+
+    std::vector<uint8_t> m_desc_data;
+    std::vector<std::vector<uint8_t>> m_row_data;
+
     std::vector<pg_column> m_columns;
-    std::vector<std::vector<std::string>> m_rows;
+    std::vector<std::vector<std::span<uint8_t>>> m_rows;
 
     result_type m_type = result_type::PENDING;
 
@@ -36,9 +42,12 @@ public:
     
     void set_error();
 
-    void add_column(pg_column&& col);
+    void set_desc_data(std::vector<uint8_t>&& desc_data);
+    void add_row_data(std::vector<uint8_t>&& row_data);
 
-    void add_row(std::vector<std::string>&& row);
+    void add_column(pg_column col);
+
+    void add_row(std::vector<std::span<uint8_t>>&& row);
 
     void set_command_tag(std::string&& tag);
     std::string_view get_command_tag() const;

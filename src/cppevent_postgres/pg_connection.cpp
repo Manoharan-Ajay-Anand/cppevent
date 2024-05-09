@@ -240,18 +240,22 @@ cppevent::awaitable_task<cppevent::pg_result> cppevent::pg_connection::get_resul
         switch (info.m_type) {
             case response_type::ROW_DESCRIPTION: {
                 std::vector<uint8_t> desc_data(info.m_size);
-                co_await m_sock->read(desc_data.data(), desc_data.size(), true);
-                int num_cols = read_u16_be(desc_data.data());
-                uint8_t* data_p = desc_data.data() + INT_16_OCTETS;
+                uint8_t* data_p = desc_data.data();
+                result.set_desc_data(std::move(desc_data));
+                co_await m_sock->read(data_p, info.m_size, true);
+
+                int num_cols = read_u16_be(data_p);
+                data_p += INT_16_OCTETS;
                 for (int i = 0; i < num_cols; ++i) {
-                    std::string col_name;
-                    for (; *data_p != 0; ++data_p) {
-                        col_name.push_back(static_cast<char>(*data_p));
+                    int offset = 0;
+                    for (; *(data_p + offset) != 0; ++offset) {
                     }
-                    data_p += 1 + 4 * INT_32_OCTETS;
+                    std::string_view col_name = { reinterpret_cast<char*>(data_p), offset };
+                    data_p += offset + 1;
+                    data_p += 4 * INT_32_OCTETS;
                     format_code col_code = static_cast<format_code>(read_u16_be(data_p));
                     data_p += INT_16_OCTETS;
-                    result.add_column({ std::move(col_name), col_code });
+                    result.add_column({ col_name, col_code });
                 }
                 break;
             }
