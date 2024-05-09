@@ -247,11 +247,11 @@ cppevent::awaitable_task<cppevent::pg_result> cppevent::pg_connection::get_resul
                 int num_cols = read_u16_be(data_p);
                 data_p += INT_16_OCTETS;
                 for (int i = 0; i < num_cols; ++i) {
-                    int offset = 0;
-                    for (; *(data_p + offset) != 0; ++offset) {
+                    int col_name_len = 0;
+                    for (; *(data_p + col_name_len) != 0; ++col_name_len) {
                     }
-                    std::string_view col_name = { reinterpret_cast<char*>(data_p), offset };
-                    data_p += offset + 1;
+                    std::string_view col_name = { reinterpret_cast<char*>(data_p), col_name_len };
+                    data_p += col_name_len + 1;
                     data_p += 4 * INT_32_OCTETS;
                     format_code col_code = static_cast<format_code>(read_u16_be(data_p));
                     data_p += INT_16_OCTETS;
