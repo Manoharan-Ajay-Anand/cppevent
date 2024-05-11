@@ -250,7 +250,8 @@ cppevent::awaitable_task<cppevent::pg_result> cppevent::pg_connection::get_resul
                     int col_name_len = 0;
                     for (; *(data_p + col_name_len) != 0; ++col_name_len) {
                     }
-                    std::string_view col_name = { reinterpret_cast<char*>(data_p), col_name_len };
+                    std::string_view col_name = { reinterpret_cast<char*>(data_p),
+                                                  static_cast<size_t>(col_name_len) };
                     data_p += col_name_len + 1;
                     data_p += 4 * INT_32_OCTETS;
                     format_code col_code = static_cast<format_code>(read_u16_be(data_p));

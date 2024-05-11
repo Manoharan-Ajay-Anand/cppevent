@@ -3,8 +3,6 @@
 #include <cppevent_crypto/crypto.hpp>
 #include <cppevent_postgres/scram.hpp>
 
-#include <cstring>
-
 TEST_CASE("scram test") {
     cppevent::crypto crypt;
     cppevent::scram scr { crypt };

@@ -1,5 +1,9 @@
 #include "pg_result.hpp"
 
+bool cppevent::pg_value::is_null() const {
+    return m_size < 0;
+}
+
 cppevent::result_type cppevent::pg_result::get_type() const {
     return m_type;
 }
@@ -32,3 +36,9 @@ void cppevent::pg_result::set_command_tag(std::string&& tag) {
 std::string_view cppevent::pg_result::get_command_tag() const {
     return m_cmd_tag;
 }
+
+bool cppevent::pg_result::get_num_rows() const {
+    return m_rows.size();
+}
+
+

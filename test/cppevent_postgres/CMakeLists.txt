@@ -1,5 +1,7 @@
 add_executable(cppevent_postgres_test
     main.cpp
+    pg_parser_test.cpp
+    pg_result_test.cpp
     scram_test.cpp
 )
 
