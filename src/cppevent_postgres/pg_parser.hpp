@@ -31,6 +31,28 @@ struct pg_parser {
         }
         return parse<std::make_unsigned_t<U>>(ptr, size) * multiplier;
     }
+
+    template <class U = T>
+    static std::enable_if_t<std::floating_point<U>, U> parse(const uint8_t* ptr, long size) {
+        int multiplier = 1;
+        U val = 0;
+        if (*ptr == '-') {
+            multiplier = -1;
+            ++ptr;
+            --size;
+        }
+        long i;
+        for (i = 0; i < size && *(ptr + i) != '.'; ++i) {
+            val = (val * 10) + convert_char_num(*(ptr + i));
+        }
+        ++i;
+        long divisor = 1;
+        for (; i < size; ++i) {
+            val = (val * 10) + convert_char_num(*(ptr + i));
+            divisor *= 10;
+        }
+        return (val / divisor) * multiplier;
+    }
 };
 
 template <>
