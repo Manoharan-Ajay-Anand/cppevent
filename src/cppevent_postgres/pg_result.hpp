@@ -72,12 +72,6 @@ public:
         t = pg_parser<T>::parse(val.m_ptr, val.m_size);
     }
 
-    template <long VAL_INDEX = 0, typename T, typename... Args>
-    void get_row(long row_index, T& t, Args&... args) const {
-        get_row<VAL_INDEX, T>(row_index, t);
-        get_row<VAL_INDEX + 1>(row_index, args...);
-    }
-
     template <long VAL_INDEX = 0, typename T>
     void get_row(long row_index, std::optional<T>& opt) const {
         auto val = m_rows[row_index][VAL_INDEX];
@@ -85,6 +79,12 @@ public:
             return;
         }
         opt = pg_parser<T>::parse(val.m_ptr, val.m_size);
+    }
+
+    template <long VAL_INDEX = 0, typename T, typename... Args>
+    void get_row(long row_index, T& t, Args&... args) const {
+        get_row<VAL_INDEX, T>(row_index, t);
+        get_row<VAL_INDEX + 1>(row_index, args...);
     }
 
     template <long VAL_INDEX = 0, typename T, typename... Args>
