@@ -37,7 +37,7 @@ std::string_view cppevent::pg_result::get_command_tag() const {
     return m_cmd_tag;
 }
 
-bool cppevent::pg_result::get_num_rows() const {
+long cppevent::pg_result::get_num_rows() const {
     return m_rows.size();
 }
 

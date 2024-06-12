@@ -27,6 +27,8 @@ TEST_CASE("pg_result test") {
         result.add_row({ p_id_1, p_null_role });
         result.add_row({ p_id_2, p_role });
 
+        CHECK_EQ(result.get_num_rows(), 2);
+
         int id;
         std::optional<std::string> role;
         

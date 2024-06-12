@@ -61,7 +61,7 @@ public:
     void set_command_tag(std::string&& tag);
     std::string_view get_command_tag() const;
 
-    bool get_num_rows() const;
+    long get_num_rows() const;
 
     template <long VAL_INDEX = 0, typename T>
     void get_row(long row_index, T& t) const {
