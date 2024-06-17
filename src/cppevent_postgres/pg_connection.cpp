@@ -15,6 +15,21 @@
 #include <stdexcept>
 #include <iostream>
 
+constexpr int INT_32_OCTETS = 4;
+constexpr int INT_16_OCTETS = 2;
+
+void cppevent::response_header::set_type(char c) {
+    m_buf[0] = c;
+}
+
+void cppevent::response_header::set_size(long size) {
+    cppevent::write_u32_be(&(m_buf[1]), size + INT_32_OCTETS);
+}
+
+const uint8_t* cppevent::response_header::data() {
+    return m_buf;
+}
+
 constexpr int STARTUP_HEADER_SIZE = 8;
 constexpr uint32_t POSTGRES_PROTOCOL_MAJOR_VERSION = 3;
 constexpr uint32_t POSTGRES_PROTOCOL_MINOR_VERSION = 0;
@@ -23,11 +38,6 @@ constexpr uint32_t POSTGRES_PROTOCOL = (POSTGRES_PROTOCOL_MAJOR_VERSION << 16) +
 
 constexpr char STARTUP_PARAM_USER[] = "user";
 constexpr char STARTUP_PARAM_DATABASE[] = "database";
-
-constexpr int HEADER_SIZE = 5;
-
-constexpr int INT_32_OCTETS = 4;
-constexpr int INT_16_OCTETS = 2;
 
 cppevent::pg_connection::pg_connection(std::unique_ptr<socket>&& sock,
                                        long* conn_count): m_sock(std::move(sock)),
@@ -63,27 +73,6 @@ cppevent::awaitable_task<cppevent::response_info> cppevent::pg_connection::get_r
 
     co_return response_info { type, size };
 }
-
-class response_header {
-private:
-    uint8_t m_buf[HEADER_SIZE];
-public:
-    void set_type(char c) {
-        m_buf[0] = c;
-    }
-
-    void set_size(long size) {
-        cppevent::write_u32_be(&(m_buf[1]), size + INT_32_OCTETS);
-    }
-
-    const uint8_t* data() {
-        return m_buf;
-    }
-
-    constexpr long size() {
-        return HEADER_SIZE;
-    }
-};
 
 constexpr long CLIENT_NONCE_OCTETS = 24;
 
@@ -296,4 +285,19 @@ cppevent::awaitable_task<cppevent::pg_result> cppevent::pg_connection::get_resul
         }
     }
     co_return std::move(result);
+}
+
+cppevent::awaitable_task<void> cppevent::pg_connection::parse(const std::string& q) {
+    response_header res_header;
+    res_header.set_type('P');
+    res_header.set_size(q.size() + INT_32_OCTETS);
+
+    constexpr std::array<char, INT_16_OCTETS> NULL_ARR = { '\0', '\0'};
+    co_await m_sock->write(res_header.data(), res_header.size());
+    co_await m_sock->write(NULL_ARR.data(), 1);
+    co_await m_sock->write(q.c_str(), q.size() + 1);
+    co_await m_sock->write(NULL_ARR.data(), NULL_ARR.size());
+
+    co_await m_sock->flush();
+    m_query_ready = false;
 }

@@ -1,7 +1,7 @@
 #ifndef CPPEVENT_POSTGRES_PG_RESULT_HPP
 #define CPPEVENT_POSTGRES_PG_RESULT_HPP
 
-#include "pg_parser.hpp"
+#include "pg_conv.hpp"
 
 #include <cstdint>
 #include <vector>
@@ -83,13 +83,7 @@ public:
 
     template <long VAL_INDEX = 0, typename T, typename... Args>
     void get_row(long row_index, T& t, Args&... args) const {
-        get_row<VAL_INDEX, T>(row_index, t);
-        get_row<VAL_INDEX + 1>(row_index, args...);
-    }
-
-    template <long VAL_INDEX = 0, typename T, typename... Args>
-    void get_row(long row_index, std::optional<T>& opt, Args&... args) const {
-        get_row<VAL_INDEX, T>(row_index, opt);
+        get_row<VAL_INDEX>(row_index, t);
         get_row<VAL_INDEX + 1>(row_index, args...);
     }
 };

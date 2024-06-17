@@ -37,6 +37,23 @@ struct response_info {
     long m_size;
 };
 
+constexpr int HEADER_SIZE = 5;
+
+class response_header {
+private:
+    uint8_t m_buf[HEADER_SIZE];
+public:
+    void set_type(char c);
+
+    void set_size(long size);
+
+    const uint8_t* data();
+
+    constexpr long size() const {
+        return HEADER_SIZE;
+    }
+};
+
 struct pg_config;
 
 class crypto;
@@ -53,6 +70,7 @@ private:
                                      const pg_config& config, scram& scr);
 
     awaitable_task<response_info> get_response_info();
+
 public:
     pg_connection(std::unique_ptr<socket>&& sock, long* conn_count);
     ~pg_connection();
@@ -65,6 +83,16 @@ public:
     awaitable_task<void> query(const std::string& q);
 
     awaitable_task<pg_result> get_result();
+
+    awaitable_task<void> parse(const std::string& q);
+
+    template <typename T, typename... Args>
+    awaitable_task<void> bind(T& val, Args&... args) {
+        response_header res_header;
+        res_header.set_type('B');
+        res_header.set_size(10);
+        co_await m_sock->write(res_header.data(), res_header.size());
+    }
 };
 
 }
