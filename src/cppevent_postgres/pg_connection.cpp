@@ -2,6 +2,7 @@
 
 #include "types.hpp"
 #include "scram.hpp"
+#include "pg_params.hpp"
 
 #include <cppevent_base/util.hpp>
 
@@ -64,12 +65,19 @@ cppevent::pg_connection& cppevent::pg_connection::operator=(pg_connection&& othe
     return *this;
 }
 
-cppevent::awaitable_task<cppevent::response_info> cppevent::pg_connection::get_response_info() {
+cppevent::awaitable_task<cppevent::response_info>
+        cppevent::pg_connection::get_response_info(bool ignore_notice) {
     uint8_t res_header[HEADER_SIZE];
-    co_await m_sock->read(res_header, HEADER_SIZE, true);
+    response_type type;
+    long size = 0;
 
-    response_type type = static_cast<response_type>(res_header[0]);
-    long size = read_u32_be(&(res_header[1])) - INT_32_OCTETS;
+    do {
+        if (size > 0) co_await m_sock->skip(size, true);
+        co_await m_sock->read(res_header, HEADER_SIZE, true);
+
+        type = static_cast<response_type>(res_header[0]);
+        size = read_u32_be(&(res_header[1])) - INT_32_OCTETS;
+    } while (ignore_notice && type == response_type::NOTICE_RESPONSE);
 
     co_return response_info { type, size };
 }
@@ -197,13 +205,65 @@ cppevent::awaitable_task<void> cppevent::pg_connection::init(const pg_config& co
     }
 }
 
-cppevent::awaitable_task<void> cppevent::pg_connection::query(const std::string& q) {
-    while (!m_query_ready) {
-        response_info info = co_await get_response_info();
-        co_await m_sock->skip(info.m_size, true);
-        if (info.m_type == response_type::READY_FOR_QUERY) {
-            m_query_ready = true;
+cppevent::awaitable_task<void> cppevent::pg_connection::wait_query_ready() {
+    response_info info;
+    do {
+        info = co_await get_response_info();
+        if (info.m_size > 0) co_await m_sock->skip(info.m_size, true); 
+    } while (info.m_type != response_type::READY_FOR_QUERY);
+
+    m_query_ready = true;
+}
+
+cppevent::awaitable_task<void> cppevent::pg_connection::populate_result(response_info info,
+                                                                        pg_result& result) {
+    switch (info.m_type) {
+        case response_type::ROW_DESCRIPTION: {
+            std::vector<uint8_t> desc_data(info.m_size);
+            uint8_t* data_p = desc_data.data();
+            result.set_desc_data(std::move(desc_data));
+            co_await m_sock->read(data_p, info.m_size, true);
+
+            int num_cols = read_u16_be(data_p);
+            data_p += INT_16_OCTETS;
+            for (int i = 0; i < num_cols; ++i) {
+                int col_name_len = 0;
+                for (; *(data_p + col_name_len) != 0; ++col_name_len) {
+                }
+                std::string_view col_name = { reinterpret_cast<char*>(data_p),
+                                                static_cast<size_t>(col_name_len) };
+                data_p += col_name_len + 1;
+                data_p += 4 * INT_32_OCTETS;
+                format_code col_code = static_cast<format_code>(read_u16_be(data_p));
+                data_p += INT_16_OCTETS;
+                result.add_column({ col_name, col_code });
+            }
+            break;
         }
+        case response_type::DATA_ROW: {
+            std::vector<uint8_t> row_data(info.m_size);
+            uint8_t* data_p = row_data.data();
+            result.add_row_data(std::move(row_data));
+            co_await m_sock->read(data_p, info.m_size, true);
+
+            std::vector<pg_value> row;
+            int num_cols = read_u16_be(data_p);
+            data_p += INT_16_OCTETS;
+            for (int i = 0; i < num_cols; ++i) {
+                int32_t val_len = static_cast<int32_t>(read_u32_be(data_p));
+                data_p += INT_32_OCTETS;
+                row.push_back(pg_value { data_p, val_len });
+                if (val_len > 0) data_p += val_len;
+            }
+            result.add_row(std::move(row));
+        }
+    }
+}
+
+cppevent::awaitable_task<std::vector<cppevent::pg_result>> 
+        cppevent::pg_connection::query_simple(const std::string& q) {
+    if (!m_query_ready) {
+        throw std::runtime_error("pg_connection query_simple: Not query ready");
     }
 
     response_header res_header;
@@ -217,87 +277,77 @@ cppevent::awaitable_task<void> cppevent::pg_connection::query(const std::string&
     co_await m_sock->flush();
 
     m_query_ready = false;
-}
+    std::vector<pg_result> results = { pg_result{} };
 
-cppevent::awaitable_task<cppevent::pg_result> cppevent::pg_connection::get_result() {
-    pg_result result;
-    if (m_query_ready) {
-        throw std::runtime_error("pg_connection get_result: no query specified");
-    }
-    while (result.get_type() == result_type::PENDING) {
+    while (!m_query_ready) {
         response_info info = co_await get_response_info();
         switch (info.m_type) {
-            case response_type::ROW_DESCRIPTION: {
-                std::vector<uint8_t> desc_data(info.m_size);
-                uint8_t* data_p = desc_data.data();
-                result.set_desc_data(std::move(desc_data));
-                co_await m_sock->read(data_p, info.m_size, true);
-
-                int num_cols = read_u16_be(data_p);
-                data_p += INT_16_OCTETS;
-                for (int i = 0; i < num_cols; ++i) {
-                    int col_name_len = 0;
-                    for (; *(data_p + col_name_len) != 0; ++col_name_len) {
-                    }
-                    std::string_view col_name = { reinterpret_cast<char*>(data_p),
-                                                  static_cast<size_t>(col_name_len) };
-                    data_p += col_name_len + 1;
-                    data_p += 4 * INT_32_OCTETS;
-                    format_code col_code = static_cast<format_code>(read_u16_be(data_p));
-                    data_p += INT_16_OCTETS;
-                    result.add_column({ col_name, col_code });
-                }
-                break;
-            }
-            case response_type::DATA_ROW: {
-                std::vector<uint8_t> row_data(info.m_size);
-                uint8_t* data_p = row_data.data();
-                result.add_row_data(std::move(row_data));
-                co_await m_sock->read(data_p, info.m_size, true);
-
-                std::vector<pg_value> row;
-                int num_cols = read_u16_be(data_p);
-                data_p += INT_16_OCTETS;
-                for (int i = 0; i < num_cols; ++i) {
-                    int32_t val_len = static_cast<int32_t>(read_u32_be(data_p));
-                    data_p += INT_32_OCTETS;
-                    row.push_back(pg_value { data_p, val_len });
-                    if (val_len > 0) data_p += val_len;
-                }
-                result.add_row(std::move(row));
-                break;
-            }
             case response_type::COMMAND_COMPLETE: {
                 std::string tag;
                 co_await m_sock->read(tag, info.m_size, true);
                 tag.pop_back();
-                result.set_command_tag(std::move(tag));
+                results.back().set_command_tag(std::move(tag));
+                results.push_back(pg_result{});
                 break;
             }
+            case response_type::ROW_DESCRIPTION:
+            case response_type::DATA_ROW:
+                populate_result(info, results.back());
+                break;
             case response_type::EMPTY_QUERY_RESPONSE:
             case response_type::ERROR_RESPONSE:
-                result.set_error();
-            case response_type::NOTICE_RESPONSE:
-                m_sock->skip(info.m_size, true);
+                results.back().set_error();
+                results.push_back(pg_result{});
                 break;
-            default:
-                throw std::runtime_error("pg_connection get_result: unknown response type");
+            case response_type::READY_FOR_QUERY:
+                co_await m_sock->skip(info.m_size, true);
+                m_query_ready = true;
         }
     }
-    co_return std::move(result);
+
+    results.pop_back();
+    co_return std::move(results);
 }
 
-cppevent::awaitable_task<void> cppevent::pg_connection::parse(const std::string& q) {
+constexpr std::array<uint8_t, INT_16_OCTETS> NULL_ARR = { 0, 0 };
+
+cppevent::awaitable_task<void> cppevent::pg_connection::parse(const std::string& q,
+                                                              const std::string& ps_name) {
     response_header res_header;
     res_header.set_type('P');
-    res_header.set_size(q.size() + INT_32_OCTETS);
+    res_header.set_size(q.size() + ps_name.size() + INT_32_OCTETS);
 
-    constexpr std::array<char, INT_16_OCTETS> NULL_ARR = { '\0', '\0'};
     co_await m_sock->write(res_header.data(), res_header.size());
-    co_await m_sock->write(NULL_ARR.data(), 1);
+    co_await m_sock->write(ps_name.c_str(), ps_name.size() + 1);
     co_await m_sock->write(q.c_str(), q.size() + 1);
     co_await m_sock->write(NULL_ARR.data(), NULL_ARR.size());
 
     co_await m_sock->flush();
     m_query_ready = false;
+
+    response_info info = co_await get_response_info();
+    if (info.m_type != response_type::PARSE_COMPLETE) {
+        throw std::runtime_error("pg_connection parse failed: error response");
+    }
+}
+
+cppevent::awaitable_task<void> cppevent::pg_connection::bind(const pg_params& params,
+                                                             const std::string& ps_name,
+                                                             const std::string& portal_name) {
+    response_header res_header;
+    res_header.set_type('B');
+    res_header.set_size(params.size() + portal_name.size() + ps_name.size() + 3 * INT_16_OCTETS);
+
+    co_await m_sock->write(res_header.data(), res_header.size());
+    co_await m_sock->write(portal_name.c_str(), portal_name.size() + 1);
+    co_await m_sock->write(ps_name.c_str(), ps_name.size() + 1);
+    co_await m_sock->write(NULL_ARR.data(), NULL_ARR.size());
+    co_await m_sock->write(params.data(), params.size());
+    co_await m_sock->write(NULL_ARR.data(), NULL_ARR.size());
+    co_await m_sock->flush();
+
+    response_info info = co_await get_response_info();
+    if (info.m_type != response_type::BIND_COMPLETE) {
+        throw std::runtime_error("pg_connection bind failed: error response");
+    }
 }

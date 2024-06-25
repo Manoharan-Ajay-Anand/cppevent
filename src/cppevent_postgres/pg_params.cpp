@@ -1,7 +1,9 @@
 #include "pg_params.hpp"
 
-long cppevent::pg_params::count() const {
-    return m_count;
+#include <cppevent_base/util.hpp>
+
+void cppevent::pg_params::increment() {
+    write_u16_be(m_buffer.data(), ++m_count);
 }
 
 long cppevent::pg_params::size() const {

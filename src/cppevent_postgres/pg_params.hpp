@@ -14,25 +14,25 @@ namespace cppevent {
 class pg_params {
 private:
     long m_count = 0;
-    std::vector<uint8_t> m_buffer;
+    std::vector<uint8_t> m_buffer = { 0, 0 };
+
+    void increment();
 
 public:
-    long count() const;
-
     long size() const;
 
     const uint8_t* data() const;
 
     template <typename T>
     void store(const T& val) {
-        ++m_count;
+        increment();
         pg_serializer<T>::serialize(m_buffer, val);
     }
 
     template <typename T>
     void store(const std::optional<T>& val_opt) {
         if (!val_opt.has_value()) {
-            ++m_count;
+            increment();
             long index = m_buffer.size();
             m_buffer.resize(index + 4);
             write_u32_be(m_buffer.data() + index, static_cast<uint32_t>(-1));

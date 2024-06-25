@@ -29,7 +29,9 @@ enum class response_type: char {
     EMPTY_QUERY_RESPONSE = 'I',
     COMMAND_COMPLETE = 'C',
     DATA_ROW = 'D',
-    ROW_DESCRIPTION = 'T'
+    ROW_DESCRIPTION = 'T',
+    PARSE_COMPLETE = '1',
+    BIND_COMPLETE = '2'
 };
 
 struct response_info {
@@ -60,6 +62,8 @@ class crypto;
 
 class scram;
 
+class pg_params;
+
 class pg_connection {
 private:
     std::unique_ptr<socket> m_sock;
@@ -69,8 +73,11 @@ private:
     awaitable_task<void> handle_auth(response_info info,
                                      const pg_config& config, scram& scr);
 
-    awaitable_task<response_info> get_response_info();
+    awaitable_task<response_info> get_response_info(bool ignore_notice = true);
 
+    awaitable_task<void> wait_query_ready();
+
+    awaitable_task<void> populate_result(response_info info, pg_result& result);
 public:
     pg_connection(std::unique_ptr<socket>&& sock, long* conn_count);
     ~pg_connection();
@@ -80,19 +87,13 @@ public:
 
     awaitable_task<void> init(const pg_config& config, crypto& crypt);
 
-    awaitable_task<void> query(const std::string& q);
+    awaitable_task<std::vector<pg_result>> query_simple(const std::string& q);
 
-    awaitable_task<pg_result> get_result();
+    awaitable_task<void> parse(const std::string& q, const std::string& ps_name = "");
 
-    awaitable_task<void> parse(const std::string& q);
-
-    template <typename T, typename... Args>
-    awaitable_task<void> bind(T& val, Args&... args) {
-        response_header res_header;
-        res_header.set_type('B');
-        res_header.set_size(10);
-        co_await m_sock->write(res_header.data(), res_header.size());
-    }
+    awaitable_task<void> bind(const pg_params& params,
+                              const std::string& ps_name = "",
+                              const std::string& portal_name = "");
 };
 
 }
