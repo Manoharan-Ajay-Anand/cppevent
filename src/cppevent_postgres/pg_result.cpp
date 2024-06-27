@@ -12,6 +12,10 @@ void cppevent::pg_result::set_error() {
     m_type = result_type::ERROR;
 }
 
+void cppevent::pg_result::set_suspended() {
+    m_type = result_type::SUSPENDED;
+}
+
 void cppevent::pg_result::set_desc_data(std::vector<uint8_t>&& desc_data) {
     m_desc_data = std::move(desc_data);
 }

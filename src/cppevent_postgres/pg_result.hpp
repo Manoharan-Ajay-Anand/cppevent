@@ -15,6 +15,7 @@ namespace cppevent {
 enum class result_type {
     PENDING,
     SUCCESS,
+    SUSPENDED,
     ERROR
 };
 
@@ -50,6 +51,8 @@ public:
     result_type get_type() const;
     
     void set_error();
+
+    void set_suspended();
 
     void set_desc_data(std::vector<uint8_t>&& desc_data);
     void add_row_data(std::vector<uint8_t>&& row_data);

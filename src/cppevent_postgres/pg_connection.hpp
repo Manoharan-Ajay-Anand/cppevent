@@ -31,7 +31,8 @@ enum class response_type: char {
     DATA_ROW = 'D',
     ROW_DESCRIPTION = 'T',
     PARSE_COMPLETE = '1',
-    BIND_COMPLETE = '2'
+    BIND_COMPLETE = '2',
+    PORTAL_SUSPENDED = 's'
 };
 
 struct response_info {
@@ -75,9 +76,8 @@ private:
 
     awaitable_task<response_info> get_response_info(bool ignore_notice = true);
 
-    awaitable_task<void> wait_query_ready();
-
     awaitable_task<void> populate_result(response_info info, pg_result& result);
+
 public:
     pg_connection(std::unique_ptr<socket>&& sock, long* conn_count);
     ~pg_connection();
@@ -89,11 +89,12 @@ public:
 
     awaitable_task<std::vector<pg_result>> query_simple(const std::string& q);
 
-    awaitable_task<void> parse(const std::string& q, const std::string& ps_name = "");
+    awaitable_task<pg_result> query_extended(const std::string& q,
+                                             const pg_params& params, long max_rows = 0);
 
-    awaitable_task<void> bind(const pg_params& params,
-                              const std::string& ps_name = "",
-                              const std::string& portal_name = "");
+    awaitable_task<pg_result> execute(long max_rows = 0);
+
+    awaitable_task<void> close_sync();
 };
 
 }

@@ -205,16 +205,6 @@ cppevent::awaitable_task<void> cppevent::pg_connection::init(const pg_config& co
     }
 }
 
-cppevent::awaitable_task<void> cppevent::pg_connection::wait_query_ready() {
-    response_info info;
-    do {
-        info = co_await get_response_info();
-        if (info.m_size > 0) co_await m_sock->skip(info.m_size, true); 
-    } while (info.m_type != response_type::READY_FOR_QUERY);
-
-    m_query_ready = true;
-}
-
 cppevent::awaitable_task<void> cppevent::pg_connection::populate_result(response_info info,
                                                                         pg_result& result) {
     switch (info.m_type) {
@@ -296,6 +286,7 @@ cppevent::awaitable_task<std::vector<cppevent::pg_result>>
                 break;
             case response_type::EMPTY_QUERY_RESPONSE:
             case response_type::ERROR_RESPONSE:
+                co_await m_sock->skip(info.m_size, true);
                 results.back().set_error();
                 results.push_back(pg_result{});
                 break;
@@ -311,43 +302,101 @@ cppevent::awaitable_task<std::vector<cppevent::pg_result>>
 
 constexpr std::array<uint8_t, INT_16_OCTETS> NULL_ARR = { 0, 0 };
 
-cppevent::awaitable_task<void> cppevent::pg_connection::parse(const std::string& q,
-                                                              const std::string& ps_name) {
-    response_header res_header;
-    res_header.set_type('P');
-    res_header.set_size(q.size() + ps_name.size() + INT_32_OCTETS);
+cppevent::awaitable_task<cppevent::pg_result> cppevent::pg_connection::query_extended(const std::string& q,
+                                                                                      const pg_params& params,
+                                                                                      long max_rows) {
+    if (!m_query_ready) {
+        throw std::runtime_error("pg_connection query_extended: Not query ready");
+    }
+    
+    response_header parse_header;
+    parse_header.set_type('P');
+    parse_header.set_size(q.size() + INT_32_OCTETS);
 
-    co_await m_sock->write(res_header.data(), res_header.size());
-    co_await m_sock->write(ps_name.c_str(), ps_name.size() + 1);
+    co_await m_sock->write(parse_header.data(), parse_header.size());
+    co_await m_sock->write(NULL_ARR.data(), 1);
     co_await m_sock->write(q.c_str(), q.size() + 1);
     co_await m_sock->write(NULL_ARR.data(), NULL_ARR.size());
 
-    co_await m_sock->flush();
-    m_query_ready = false;
+    response_header bind_header;
+    bind_header.set_type('B');
+    bind_header.set_size(params.size() + 3 * INT_16_OCTETS);
 
-    response_info info = co_await get_response_info();
-    if (info.m_type != response_type::PARSE_COMPLETE) {
-        throw std::runtime_error("pg_connection parse failed: error response");
-    }
-}
-
-cppevent::awaitable_task<void> cppevent::pg_connection::bind(const pg_params& params,
-                                                             const std::string& ps_name,
-                                                             const std::string& portal_name) {
-    response_header res_header;
-    res_header.set_type('B');
-    res_header.set_size(params.size() + portal_name.size() + ps_name.size() + 3 * INT_16_OCTETS);
-
-    co_await m_sock->write(res_header.data(), res_header.size());
-    co_await m_sock->write(portal_name.c_str(), portal_name.size() + 1);
-    co_await m_sock->write(ps_name.c_str(), ps_name.size() + 1);
+    co_await m_sock->write(bind_header.data(), bind_header.size());
+    co_await m_sock->write(NULL_ARR.data(), 1);
+    co_await m_sock->write(NULL_ARR.data(), 1);
     co_await m_sock->write(NULL_ARR.data(), NULL_ARR.size());
     co_await m_sock->write(params.data(), params.size());
     co_await m_sock->write(NULL_ARR.data(), NULL_ARR.size());
+
+    m_query_ready = false;
+
+    pg_result result = co_await execute(max_rows);
+    co_return std::move(result);
+}
+
+cppevent::awaitable_task<cppevent::pg_result> cppevent::pg_connection::execute(long max_rows) {
+    response_header res_header;
+    res_header.set_type('E');
+    res_header.set_size(INT_32_OCTETS + 1);
+
+    std::array<uint8_t, INT_32_OCTETS> rows_arr;
+    write_u32_be(rows_arr.data(), max_rows);
+
+    co_await m_sock->write(res_header.data(), res_header.size());
+    co_await m_sock->write(NULL_ARR.data(), 1);
+    co_await m_sock->write(rows_arr.data(), rows_arr.size());
     co_await m_sock->flush();
 
-    response_info info = co_await get_response_info();
-    if (info.m_type != response_type::BIND_COMPLETE) {
-        throw std::runtime_error("pg_connection bind failed: error response");
+    pg_result result;
+    while (result.get_type() == result_type::PENDING) {
+        response_info info = co_await get_response_info();
+        switch (info.m_type) {
+            case response_type::PARSE_COMPLETE:
+            case response_type::BIND_COMPLETE:
+                break;
+            case response_type::EMPTY_QUERY_RESPONSE:
+            case response_type::ERROR_RESPONSE:
+                co_await m_sock->skip(info.m_size, true);
+                result.set_error();
+                break;
+            case response_type::ROW_DESCRIPTION:
+            case response_type::DATA_ROW:
+                populate_result(info, result);
+                break;
+            case response_type::COMMAND_COMPLETE: {
+                std::string tag;
+                co_await m_sock->read(tag, info.m_size, true);
+                tag.pop_back();
+                result.set_command_tag(std::move(tag));
+                break;
+            }
+            case response_type::PORTAL_SUSPENDED:
+                result.set_suspended();
+                co_return std::move(result);
+        }
     }
+
+    co_await close_sync();
+
+    co_return std::move(result);
+}
+
+cppevent::awaitable_task<void> cppevent::pg_connection::close_sync() {
+    constexpr std::array<uint8_t, INT_32_OCTETS * 3> arr = { 
+        static_cast<uint8_t>('C'), 0, 0, 0, 6,
+        static_cast<uint8_t>('P'), 0,
+        static_cast<uint8_t>('S'), 0, 0, 0, 4
+    };
+    
+    co_await m_sock->write(arr.data(), arr.size());
+    co_await m_sock->flush();
+
+    response_info info;
+    do {
+        info = co_await get_response_info();
+        if (info.m_size > 0) co_await m_sock->skip(info.m_size, true); 
+    } while (info.m_type != response_type::READY_FOR_QUERY);
+
+    m_query_ready = true;
 }
