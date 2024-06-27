@@ -87,10 +87,9 @@ public:
 
     awaitable_task<void> init(const pg_config& config, crypto& crypt);
 
-    awaitable_task<std::vector<pg_result>> query_simple(const std::string& q);
+    awaitable_task<std::vector<pg_result>> query(const std::string& q);
 
-    awaitable_task<pg_result> query_extended(const std::string& q,
-                                             const pg_params& params, long max_rows = 0);
+    awaitable_task<void> prepare_query(const std::string& q, const pg_params& params);
 
     awaitable_task<pg_result> execute(long max_rows = 0);
 

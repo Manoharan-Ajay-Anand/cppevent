@@ -251,7 +251,7 @@ cppevent::awaitable_task<void> cppevent::pg_connection::populate_result(response
 }
 
 cppevent::awaitable_task<std::vector<cppevent::pg_result>> 
-        cppevent::pg_connection::query_simple(const std::string& q) {
+        cppevent::pg_connection::query(const std::string& q) {
     if (!m_query_ready) {
         throw std::runtime_error("pg_connection query_simple: Not query ready");
     }
@@ -302,9 +302,8 @@ cppevent::awaitable_task<std::vector<cppevent::pg_result>>
 
 constexpr std::array<uint8_t, INT_16_OCTETS> NULL_ARR = { 0, 0 };
 
-cppevent::awaitable_task<cppevent::pg_result> cppevent::pg_connection::query_extended(const std::string& q,
-                                                                                      const pg_params& params,
-                                                                                      long max_rows) {
+cppevent::awaitable_task<void> cppevent::pg_connection::prepare_query(const std::string& q,
+                                                                      const pg_params& params) {
     if (!m_query_ready) {
         throw std::runtime_error("pg_connection query_extended: Not query ready");
     }
@@ -330,22 +329,24 @@ cppevent::awaitable_task<cppevent::pg_result> cppevent::pg_connection::query_ext
     co_await m_sock->write(NULL_ARR.data(), NULL_ARR.size());
 
     m_query_ready = false;
-
-    pg_result result = co_await execute(max_rows);
-    co_return std::move(result);
 }
 
 cppevent::awaitable_task<cppevent::pg_result> cppevent::pg_connection::execute(long max_rows) {
-    response_header res_header;
-    res_header.set_type('E');
-    res_header.set_size(INT_32_OCTETS + 1);
+    response_header exec_header;
+    exec_header.set_type('E');
+    exec_header.set_size(INT_32_OCTETS + 1);
 
     std::array<uint8_t, INT_32_OCTETS> rows_arr;
     write_u32_be(rows_arr.data(), max_rows);
 
-    co_await m_sock->write(res_header.data(), res_header.size());
+    co_await m_sock->write(exec_header.data(), exec_header.size());
     co_await m_sock->write(NULL_ARR.data(), 1);
     co_await m_sock->write(rows_arr.data(), rows_arr.size());
+    
+    response_header flush_header;
+    flush_header.set_type('H');
+    flush_header.set_size(0);
+    co_await m_sock->write(flush_header.data(), flush_header.size());
     co_await m_sock->flush();
 
     pg_result result;
