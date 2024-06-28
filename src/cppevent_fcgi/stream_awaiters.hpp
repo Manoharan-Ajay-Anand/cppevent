@@ -9,8 +9,7 @@ class suspended_coro;
 
 struct stream_update_awaiter {
     suspended_coro& m_producer;
-    suspended_coro& m_consumer;
-    long& m_remaining;
+    long m_remaining;
 
     bool await_ready();
 

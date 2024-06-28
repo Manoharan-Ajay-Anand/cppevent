@@ -63,5 +63,6 @@ cppevent::awaitable_task<long> cppevent::stream::skip(long size, bool skip_fully
 cppevent::stream_update_awaiter cppevent::stream::update(long remaining) {
     m_ended = remaining == 0;
     m_remaining = remaining;
-    return { m_producer, m_consumer, m_remaining };
+    m_consumer.retrieve_handle().resume();
+    return { m_producer, m_remaining };
 }

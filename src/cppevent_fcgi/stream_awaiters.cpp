@@ -3,7 +3,6 @@
 #include <cppevent_base/suspended_coro.hpp>
 
 bool cppevent::stream_update_awaiter::await_ready() {
-    m_consumer.retrieve_handle().resume();
     return m_remaining == 0;
 }
 
