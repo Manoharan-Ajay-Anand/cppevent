@@ -10,11 +10,11 @@ class suspended_coro;
 struct stream_update_awaiter {
     suspended_coro& m_producer;
     suspended_coro& m_consumer;
-    bool m_ended;
+    long& m_remaining;
 
     bool await_ready();
 
-    std::coroutine_handle<> await_suspend(std::coroutine_handle<> handle);
+    void await_suspend(std::coroutine_handle<> handle);
 
     void await_resume();
 };
