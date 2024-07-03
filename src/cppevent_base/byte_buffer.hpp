@@ -34,11 +34,11 @@ private:
     }
 
 public:
-    long available() {
+    long available() const {
         return m_end - m_start;
     }
 
-    long capacity() {
+    long capacity() const {
         return BUFFER_SIZE - available();
     }
 
