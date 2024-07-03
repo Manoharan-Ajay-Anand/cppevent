@@ -76,9 +76,11 @@ cppevent::task cppevent::fcgi_server::on_connection(std::unique_ptr<socket> sock
     request_map requests;
     output_control control;
     
-    auto write_task = control.begin_res_task(*sock);
-    auto read_task = read_req(*sock, control, requests, signal.get_trigger());
-
-    co_await signal.await_signal();
+    {
+        auto write_task = control.begin_res_task(*sock);
+        auto read_task = read_req(*sock, control, requests, signal.get_trigger());
+        co_await signal.await_signal();
+    }
+    
     sock->shutdown();
 }
