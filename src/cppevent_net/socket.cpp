@@ -114,7 +114,7 @@ cppevent::awaitable_task<long> cppevent::socket::skip(long size, bool skip_fully
          total += skip_buffer(m_in_buffer, size - total)) {
         e_status status = co_await recv_incoming();
         if (status < 0) {
-            throw_error("socket read failed: ", 0 - status);
+            throw_error("socket skip failed: ", 0 - status);
         } else if (status == 0) {
             if (skip_fully) {
                 throw std::runtime_error("socket skip failed: socket closed");   
