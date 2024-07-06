@@ -29,15 +29,15 @@ void cppevent::socket::shutdown() {
 }
 
 cppevent::awaitable_task<cppevent::e_status> cppevent::socket::recv_incoming() {
-    io_chunk chunk = m_in_buffer.get_write_chunk();
-    e_status status = co_await m_read_listener->on_recv(chunk.m_ptr, chunk.m_size, 0);
+    std::span<std::byte> chunk = m_in_buffer.get_write_chunk();
+    e_status status = co_await m_read_listener->on_recv(chunk.data(), chunk.size(), 0);
     if (status > 0) m_in_buffer.increment_write_p(status);
     co_return status;
 }
 
 cppevent::awaitable_task<cppevent::e_status> cppevent::socket::send_outgoing() {
-    io_chunk chunk = m_out_buffer.get_read_chunk();
-    e_status status = co_await m_write_listener->on_send(chunk.m_ptr, chunk.m_size, MSG_NOSIGNAL);
+    std::span<std::byte> chunk = m_out_buffer.get_read_chunk();
+    e_status status = co_await m_write_listener->on_send(chunk.data(), chunk.size(), MSG_NOSIGNAL);
     if (status > 0) m_out_buffer.increment_read_p(status);
     co_return status;
 }
