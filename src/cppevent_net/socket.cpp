@@ -42,6 +42,22 @@ cppevent::awaitable_task<cppevent::e_status> cppevent::socket::send_outgoing() {
     co_return status;
 }
 
+cppevent::awaitable_task<std::span<std::byte>> cppevent::socket::peek() {
+    std::span<std::byte> chunk = m_in_buffer.get_read_chunk();
+    if (chunk.size() == 0) {
+        e_status status = co_await recv_incoming();
+        if (status < 0) {
+            throw_error("socket peek failed: ", 0 - status);
+        }
+        chunk = m_in_buffer.get_read_chunk();
+    }
+    co_return chunk;
+}
+
+void cppevent::socket::seek(long offset) {
+    m_in_buffer.increment_read_p(offset);
+}
+
 cppevent::awaitable_task<long> cppevent::socket::read(void* dest, long size, bool read_fully) {
     std::byte* dest_p = static_cast<std::byte*>(dest);
     long total;
