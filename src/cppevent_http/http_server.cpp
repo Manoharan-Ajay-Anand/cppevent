@@ -1,5 +1,7 @@
 #include "http_server.hpp"
 
+#include "util.hpp"
+
 #include <cppevent_net/socket.hpp>
 
 cppevent::http_server::http_server(const char* name,
@@ -12,6 +14,6 @@ cppevent::http_server::http_server(const char* unix_path,
 }
 
 cppevent::task cppevent::http_server::on_connection(std::unique_ptr<socket> sock) {
-    std::string req;
-    co_await sock->read(req, 3, true);
+    std::vector<std::string> req_header_lines;
+    http_line req_line = co_await read_http_line(*sock);
 }
