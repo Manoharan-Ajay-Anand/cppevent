@@ -2,12 +2,16 @@
 
 #include <cppevent_net/socket.hpp>
 
+bool cppevent::http_line::has_value() const {
+    return m_received && !m_val.empty();
+}
+
 cppevent::awaitable_task<cppevent::http_line> cppevent::read_http_line(socket& sock) {
     std::string line;
     bool line_ended = false;
     while (!line_ended) {
         std::span<std::byte> chunk = co_await sock.peek();
-        if (chunk.size() == 0)  break;
+        if (chunk.size() == 0) break;
         
         long offset;
         for (offset = 0; offset < chunk.size() && !line_ended; ++offset) {

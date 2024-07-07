@@ -12,6 +12,8 @@ class socket;
 struct http_line {
     std::string m_val;
     bool m_received;
+
+    bool has_value() const;
 };
 
 awaitable_task<http_line> read_http_line(socket& sock);
