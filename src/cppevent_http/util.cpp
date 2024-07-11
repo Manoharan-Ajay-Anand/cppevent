@@ -2,8 +2,26 @@
 
 #include <cppevent_net/socket.hpp>
 
+std::vector<std::string_view> cppevent::split_string(std::string_view s, char separator) {
+    std::vector<std::string_view> result;
+    long start = 0;
+    for (long i = 0; i <= s.size(); ++i) {
+        if (i == s.size() || s[i] == separator) {
+            if (start < i) {
+                result.push_back(s.substr(start, i - start));
+            }
+            start = i + 1;
+        }
+    }
+    return result;
+}
+
 bool cppevent::http_line::has_value() const {
     return m_received && !m_val.empty();
+}
+
+bool cppevent::http_line::is_last_line() const {
+    return m_received && m_val.empty();
 }
 
 cppevent::awaitable_task<cppevent::http_line> cppevent::read_http_line(socket& sock) {

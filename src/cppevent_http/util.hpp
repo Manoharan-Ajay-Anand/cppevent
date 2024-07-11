@@ -4,6 +4,8 @@
 #include <cppevent_base/task.hpp>
 
 #include <string>
+#include <vector>
+#include <string_view>
 
 namespace cppevent {
 
@@ -14,9 +16,12 @@ struct http_line {
     bool m_received;
 
     bool has_value() const;
+    bool is_last_line() const;
 };
 
 awaitable_task<http_line> read_http_line(socket& sock);
+
+std::vector<std::string_view> split_string(std::string_view s, char separator);
 
 }
 
