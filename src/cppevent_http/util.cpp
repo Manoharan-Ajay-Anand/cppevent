@@ -2,20 +2,6 @@
 
 #include <cppevent_net/socket.hpp>
 
-std::vector<std::string_view> cppevent::split_string(std::string_view s, char separator) {
-    std::vector<std::string_view> result;
-    long start = 0;
-    for (long i = 0; i <= s.size(); ++i) {
-        if (i == s.size() || s[i] == separator) {
-            if (start < i) {
-                result.push_back(s.substr(start, i - start));
-            }
-            start = i + 1;
-        }
-    }
-    return result;
-}
-
 bool cppevent::http_line::has_value() const {
     return m_received && !m_val.empty();
 }
@@ -45,4 +31,38 @@ cppevent::awaitable_task<cppevent::http_line> cppevent::read_http_line(socket& s
     }
     http_line result = { std::move(line), line_ended };
     co_return std::move(result);
+}
+
+std::vector<std::string_view> cppevent::split_string(std::string_view s, char separator) {
+    std::vector<std::string_view> result;
+    long start = 0;
+    for (long i = 0; i <= s.size(); ++i) {
+        if (i == s.size() || s[i] == separator) {
+            if (start < i) {
+                result.push_back(s.substr(start, i - start));
+            }
+            start = i + 1;
+        }
+    }
+    return result;
+}
+
+std::multimap<std::string_view, std::string_view> cppevent::retrieve_params(std::string_view s) {
+    std::multimap<std::string_view, std::string_view> result;
+    long start = 0;
+    std::string_view key;
+    for (long i = 0; i <= s.size(); ++i) {
+        if (i == s.size() || s[i] == '&') {
+            if (start < i) {
+                result.insert(std::pair { key, s.substr(start, i - start) });
+            }
+            start = i + 1;
+        } else if (s[i] == '=') {
+            if (start < i) {
+                key = s.substr(start, i - start);
+            }
+            start = i + 1;
+        }
+    }
+    return result;
 }

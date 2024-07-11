@@ -3,6 +3,7 @@
 
 #include <string_view>
 #include <vector>
+#include <map>
 
 namespace cppevent {
 
@@ -28,10 +29,12 @@ private:
     std::string_view m_path;
     std::vector<std::string_view> m_path_segments;
 
-    bool process_path();
+    std::multimap<std::string_view, std::string_view> m_query_params;
+
+    void process_path(std::string_view path);
 public:
-    bool process_req_line(const http_line& line);
-    bool process_header_line(const http_line& line);
+    bool process_req_line(std::string_view line);
+    bool process_header_line(std::string_view line);
 };
 
 }
