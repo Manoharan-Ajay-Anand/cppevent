@@ -66,3 +66,15 @@ std::multimap<std::string_view, std::string_view> cppevent::retrieve_params(std:
     }
     return result;
 }
+
+std::string_view cppevent::trim_string(std::string_view s) {
+    long start;
+    for (start = 0; start < s.size() && s[start] == ' '; ++start);
+
+    if (start == s.size()) return std::string_view {};
+
+    long end;
+    for (end = s.size() - 1; end > start && s[end] == ' '; --end);
+
+    return s.substr(start, end - start + 1);
+}

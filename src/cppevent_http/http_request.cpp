@@ -47,5 +47,15 @@ bool cppevent::http_request::process_req_line(std::string_view line) {
 }
 
 bool cppevent::http_request::process_header_line(std::string_view line) {
+    size_t pos = line.find(':');
+    if (pos == std::string_view::npos) {
+        return false;
+    }
+
+    std::string_view key = trim_string(line.substr(0, pos));
+    std::string_view value = trim_string(line.substr(pos + 1));
+    if (key.empty() || value.empty()) return false;
+
+    m_headers[key] = value;
     return true;
 }

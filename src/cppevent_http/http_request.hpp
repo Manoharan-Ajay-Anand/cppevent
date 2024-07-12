@@ -4,6 +4,7 @@
 #include <string_view>
 #include <vector>
 #include <map>
+#include <unordered_map>
 
 namespace cppevent {
 
@@ -30,6 +31,8 @@ private:
     std::vector<std::string_view> m_path_segments;
 
     std::multimap<std::string_view, std::string_view> m_query_params;
+
+    std::unordered_map<std::string_view, std::string_view> m_headers;
 
     void process_path(std::string_view path);
 public:

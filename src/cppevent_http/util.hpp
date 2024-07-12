@@ -26,6 +26,8 @@ std::vector<std::string_view> split_string(std::string_view s, char separator);
 
 std::multimap<std::string_view, std::string_view> retrieve_params(std::string_view s);
 
+std::string_view trim_string(std::string_view s);
+
 }
 
 #endif
