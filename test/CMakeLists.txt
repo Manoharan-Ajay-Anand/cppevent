@@ -1,3 +1,4 @@
 add_subdirectory(cppevent_base)
 add_subdirectory(cppevent_crypto)
+add_subdirectory(cppevent_http)
 add_subdirectory(cppevent_postgres)

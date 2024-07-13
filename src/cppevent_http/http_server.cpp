@@ -1,6 +1,7 @@
 #include "http_server.hpp"
 
 #include "util.hpp"
+#include "http_line.hpp"
 #include "http_request.hpp"
 
 #include <cppevent_net/socket.hpp>
