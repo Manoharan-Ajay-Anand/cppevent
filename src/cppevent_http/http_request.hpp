@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 #include <unordered_map>
+#include <optional>
 
 namespace cppevent {
 
@@ -38,6 +39,17 @@ private:
 public:
     bool process_req_line(std::string_view line);
     bool process_header_line(std::string_view line);
+
+    HTTP_METHOD get_method() const;
+    HTTP_VERSION get_version() const;
+
+    std::string_view get_path() const;
+    const std::vector<std::string_view>& get_path_segments() const;
+
+    std::optional<std::string_view> get_query_param(std::string_view key) const;
+    std::vector<std::string_view> get_multi_query_param(std::string_view key) const;
+
+    std::optional<std::string_view> get_header(std::string_view key) const;
 };
 
 }

@@ -59,3 +59,44 @@ bool cppevent::http_request::process_header_line(std::string_view line) {
     m_headers[key] = value;
     return true;
 }
+
+cppevent::HTTP_METHOD cppevent::http_request::get_method() const {
+    return m_method;
+}
+
+cppevent::HTTP_VERSION cppevent::http_request::get_version() const {
+    return m_version;
+}
+
+std::string_view cppevent::http_request::get_path() const {
+    return m_path;
+}
+
+const std::vector<std::string_view>& cppevent::http_request::get_path_segments() const {
+    return m_path_segments;
+}
+
+std::optional<std::string_view> cppevent::http_request::get_query_param(std::string_view key) const {
+    auto it = m_query_params.find(key);
+    if (it == m_query_params.end()) {
+        return {};
+    }
+    return { it->second };
+}
+
+std::vector<std::string_view> cppevent::http_request::get_multi_query_param(std::string_view key) const {
+    std::vector<std::string_view> result;
+    auto p = m_query_params.equal_range(key);
+    for (auto it = p.first; it != p.second; ++it) {
+        result.push_back(it->second);
+    }
+    return result;
+}
+
+std::optional<std::string_view> cppevent::http_request::get_header(std::string_view key) const {
+    auto it = m_headers.find(key);
+    if (it == m_headers.end()) {
+        return {};
+    }
+    return { it->second };
+}
