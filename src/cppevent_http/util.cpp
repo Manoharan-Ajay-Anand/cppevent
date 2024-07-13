@@ -45,3 +45,15 @@ std::string_view cppevent::trim_string(std::string_view s) {
 
     return s.substr(start, end - start + 1);
 }
+
+std::string cppevent::lower_case(std::string_view s) {
+    std::string result;
+    for (char c : s) {
+        if (c >= 'A' && c <= 'Z') {
+            result.push_back(c + 32);
+        } else {
+            result.push_back(c);
+        }
+    }
+    return result;
+}

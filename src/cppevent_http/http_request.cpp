@@ -3,13 +3,21 @@
 #include "util.hpp"
 
 #include <unordered_map>
+#include <algorithm>
+#include <iostream>
 
-void cppevent::http_request::process_path(std::string_view path) {
-    m_path = path;
-    size_t question_pos = m_path.find('?');    
-    m_path_segments = split_string(m_path.substr(0, question_pos), '/');
-    if (question_pos < m_path.size()) {
-        m_query_params = retrieve_params(m_path.substr(question_pos + 1));
+void cppevent::http_request::process_uri(std::string_view uri) {
+    m_uri = uri;
+
+    auto q_it = m_uri.begin();
+    for (; q_it != m_uri.end() && *q_it != '?'; ++q_it);
+    
+    m_path = { m_uri.begin(), q_it };
+    m_path_segments = split_string(m_path, '/');
+
+    if (q_it != m_uri.end()) {
+        m_query = std::string_view { q_it + 1, m_uri.end() };
+        m_query_params = retrieve_params(m_query);
     }
 }
 
@@ -37,7 +45,7 @@ bool cppevent::http_request::process_req_line(std::string_view line) {
     if (method_it == method_map.end()) return false;
     m_method = method_it->second;
     
-    process_path(req_segments[1]);
+    process_uri(req_segments[1]);
     
     auto version_it = version_map.find(req_segments[2]);
     if (version_it == version_map.end()) return false;
@@ -52,11 +60,11 @@ bool cppevent::http_request::process_header_line(std::string_view line) {
         return false;
     }
 
-    std::string_view key = trim_string(line.substr(0, pos));
-    std::string_view value = trim_string(line.substr(pos + 1));
+    std::string key = lower_case(trim_string(line.substr(0, pos)));
+    std::string value { trim_string(line.substr(pos + 1)) };
     if (key.empty() || value.empty()) return false;
 
-    m_headers[key] = value;
+    m_headers[std::move(key)] = std::move(value);
     return true;
 }
 
@@ -76,6 +84,10 @@ const std::vector<std::string_view>& cppevent::http_request::get_path_segments()
     return m_path_segments;
 }
 
+std::string_view cppevent::http_request::get_query() const {
+    return m_query;
+}
+
 std::optional<std::string_view> cppevent::http_request::get_query_param(std::string_view key) const {
     auto it = m_query_params.find(key);
     if (it == m_query_params.end()) {
@@ -93,7 +105,7 @@ std::vector<std::string_view> cppevent::http_request::get_multi_query_param(std:
     return result;
 }
 
-std::optional<std::string_view> cppevent::http_request::get_header(std::string_view key) const {
+std::optional<std::string_view> cppevent::http_request::get_header(const std::string& key) const {
     auto it = m_headers.find(key);
     if (it == m_headers.end()) {
         return {};

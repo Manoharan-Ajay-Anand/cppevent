@@ -21,19 +21,21 @@ cppevent::task cppevent::http_server::on_connection(std::unique_ptr<socket> sock
     bool keep_conn = true;
     while (keep_conn) {
         http_request req;
-
-        http_line req_line = co_await read_http_line(*sock);
-        if (!req_line.has_value() || !req.process_req_line(req_line.m_val)) break;
-
-        std::vector<http_line> header_lines;
-        http_line header_line;
-        for (header_line = co_await read_http_line(*sock);
-             header_line.has_value(); 
-             header_line = co_await read_http_line(*sock)) {
-            if (!req.process_header_line(header_line.m_val)) break;
-            header_lines.push_back(std::move(header_line));
+        
+        {
+            http_line req_line = co_await read_http_line(*sock);
+            if (!req_line.has_value() || !req.process_req_line(req_line.m_val)) break;
         }
-        if (!header_line.is_last_line()) break;
+
+        {
+            http_line header_line;
+            for (header_line = co_await read_http_line(*sock);
+                header_line.has_value(); 
+                header_line = co_await read_http_line(*sock)) {
+                if (!req.process_header_line(header_line.m_val)) break;
+            }
+            if (!header_line.is_last_line()) break;
+        }
     }
     sock->shutdown();
 }

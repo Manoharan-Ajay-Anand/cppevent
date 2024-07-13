@@ -1,6 +1,7 @@
 add_executable(cppevent_http_test
     main.cpp
     util_test.cpp
+    http_request_test.cpp
 )
 
 target_link_libraries(cppevent_http_test PRIVATE cppevent)

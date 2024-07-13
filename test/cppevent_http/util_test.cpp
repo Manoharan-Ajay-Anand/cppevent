@@ -85,3 +85,8 @@ TEST_CASE("trim string test") {
         CHECK_EQ(cppevent::trim_string("     "), "");
     }
 }
+
+TEST_CASE("lower case test") {
+    std::string result = cppevent::lower_case("ABCabc");
+    CHECK_EQ(result, "abcabc");
+}
