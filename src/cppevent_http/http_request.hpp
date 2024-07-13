@@ -9,8 +9,6 @@
 
 namespace cppevent {
 
-struct http_line;
-
 enum class HTTP_METHOD {
     GET,
     POST,
