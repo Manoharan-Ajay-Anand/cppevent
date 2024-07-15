@@ -16,8 +16,6 @@ std::multimap<std::string_view, std::string_view> retrieve_params(std::string_vi
 
 std::string_view trim_string(std::string_view s);
 
-std::string lower_case(std::string_view s);
-
 }
 
 #endif

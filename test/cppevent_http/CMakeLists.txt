@@ -1,5 +1,6 @@
 add_executable(cppevent_http_test
     main.cpp
+    types_test.cpp
     util_test.cpp
     http_request_test.cpp
 )

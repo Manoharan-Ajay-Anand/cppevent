@@ -60,11 +60,14 @@ bool cppevent::http_request::process_header_line(std::string_view line) {
         return false;
     }
 
-    std::string key = lower_case(trim_string(line.substr(0, pos)));
-    std::string value { trim_string(line.substr(pos + 1)) };
-    if (key.empty() || value.empty()) return false;
+    http_string key = trim_string(line.substr(0, pos));
+    std::string_view key_v = key.get_view();
+    m_header_names.push_back(std::move(key));
 
-    m_headers[std::move(key)] = std::move(value);
+    std::string value { trim_string(line.substr(pos + 1)) };
+    if (key_v.empty() || value.empty()) return false;
+
+    m_header_lookup[key_v] = std::move(value);
     return true;
 }
 
@@ -105,9 +108,9 @@ std::vector<std::string_view> cppevent::http_request::get_multi_query_param(std:
     return result;
 }
 
-std::optional<std::string_view> cppevent::http_request::get_header(const std::string& key) const {
-    auto it = m_headers.find(key);
-    if (it == m_headers.end()) {
+std::optional<std::string_view> cppevent::http_request::get_header(std::string_view key) const {
+    auto it = m_header_lookup.find(key);
+    if (it == m_header_lookup.end()) {
         return {};
     }
     return { it->second };
