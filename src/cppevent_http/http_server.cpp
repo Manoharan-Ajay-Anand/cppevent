@@ -3,10 +3,17 @@
 #include "util.hpp"
 #include "http_line.hpp"
 #include "http_request.hpp"
+#include "http_body.hpp"
 
 #include <cppevent_net/socket.hpp>
 
 #include <vector>
+#include <string_view>
+#include <charconv>
+
+constexpr std::string_view EMPTY_SV;
+constexpr std::string_view CONTENT_LENGTH = "content-length";
+constexpr std::string_view TRANSFER_ENCODING = "transfer-encoding";
 
 cppevent::http_server::http_server(const char* name,
                                    const char* service,
@@ -36,6 +43,23 @@ cppevent::task cppevent::http_server::on_connection(std::unique_ptr<socket> sock
             }
             if (!header_line.is_last_line()) break;
         }
+
+        long content_len = 0;
+        bool content_ended = true;
+
+        std::string_view content_len_sv = req.get_header(CONTENT_LENGTH).value_or(EMPTY_SV);
+        std::string_view transfer_encode_sv = req.get_header(TRANSFER_ENCODING).value_or(EMPTY_SV);
+
+        if (!content_len_sv.empty()) {
+            std::from_chars_result result = std::from_chars(content_len_sv.begin(),
+                                                            content_len_sv.end(),
+                                                            content_len);
+            if (result.ec != std::errc {}) break;
+        } else if (transfer_encode_sv.find("chunked") != std::string_view::npos) {
+            content_ended = false;
+        }
+
+        http_body body { content_len, content_ended, *sock };
     }
     sock->shutdown();
 }
