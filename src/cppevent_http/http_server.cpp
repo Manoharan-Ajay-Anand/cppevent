@@ -30,8 +30,8 @@ cppevent::task cppevent::http_server::on_connection(std::unique_ptr<socket> sock
         {
             http_line header_line;
             for (header_line = co_await read_http_line(*sock);
-                header_line.has_value(); 
-                header_line = co_await read_http_line(*sock)) {
+                 header_line.has_value(); 
+                 header_line = co_await read_http_line(*sock)) {
                 if (!req.process_header_line(header_line.m_val)) break;
             }
             if (!header_line.is_last_line()) break;
