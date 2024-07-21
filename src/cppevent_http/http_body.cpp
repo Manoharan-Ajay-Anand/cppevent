@@ -5,15 +5,16 @@
 #include <cppevent_net/socket.hpp>
 
 #include <charconv>
+#include <algorithm>
 
-cppevent::http_body::http_body(long available, bool ended, socket& sock): m_available(available),
-                                                                          m_ended(ended),
-                                                                          m_sock(sock) {    
+cppevent::http_body::http_body(long incoming, bool ended, socket& sock): m_incoming(incoming),
+                                                                         m_ended(ended),
+                                                                         m_sock(sock) {    
 }
 
-cppevent::awaitable_task<long> cppevent::http_body::get_available() {
-    if (m_available > 0 || m_ended) {
-        co_return m_available;
+cppevent::awaitable_task<bool> cppevent::http_body::has_incoming() {
+    if (m_incoming > 0 || m_ended) {
+        co_return m_incoming > 0;
     }
 
     http_line line = co_await read_http_line(m_sock);
@@ -28,10 +29,46 @@ cppevent::awaitable_task<long> cppevent::http_body::get_available() {
         if (result.ec == std::errc {} && chunk_len == 0) {
             co_await read_http_line(m_sock);
         }
-        m_available = chunk_len;
+        m_incoming = chunk_len;
     }
 
-    if (m_available == 0) m_ended = true;
+    if (m_incoming == 0) m_ended = true;
 
-    co_return m_available;
+    co_return m_incoming > 0;
+}
+
+cppevent::awaitable_task<long> cppevent::http_body::read(void* dest, long size) {
+    long total_read = 0;
+    
+    while (total_read < size && co_await has_incoming()) {
+        long to_read = std::min(size - total_read, m_incoming);
+        co_await m_sock.read(dest, to_read, true);
+        total_read += to_read;
+    }
+
+    co_return total_read;
+}
+
+cppevent::awaitable_task<long> cppevent::http_body::read(std::string& dest, long size) {
+    long total_read = 0;
+    
+    while (total_read < size && co_await has_incoming()) {
+        long to_read = std::min(size - total_read, m_incoming);
+        co_await m_sock.read(dest, to_read, true);
+        total_read += to_read;
+    }
+
+    co_return total_read;
+}
+
+cppevent::awaitable_task<long> cppevent::http_body::skip(long size) {
+    long total_skipped = 0;
+    
+    while (total_skipped < size && co_await has_incoming()) {
+        long to_skip = std::min(size - total_skipped, m_incoming);
+        co_await m_sock.skip(to_skip, true);
+        total_skipped += to_skip;
+    }
+
+    co_return total_skipped;
 }
