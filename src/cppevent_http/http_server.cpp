@@ -55,7 +55,7 @@ cppevent::task cppevent::http_server::on_connection(std::unique_ptr<socket> sock
                                                             content_len_sv.end(),
                                                             content_len);
             if (result.ec != std::errc {}) break;
-        } else if (transfer_encode_sv.find("chunked") != std::string_view::npos) {
+        } else if (find_case_insensitive(transfer_encode_sv, "chunked") != std::string_view::npos) {
             content_ended = false;
         }
 

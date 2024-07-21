@@ -85,3 +85,13 @@ TEST_CASE("trim string test") {
         CHECK_EQ(cppevent::trim_string("     "), "");
     }
 }
+
+TEST_CASE("find case insensitive test") {
+    constexpr std::string_view text = "transfer-encoding: gzip, CHUNKED";
+
+    CHECK_EQ(cppevent::find_case_insensitive(text, ""), 0);
+    CHECK_EQ(cppevent::find_case_insensitive(text, "chunked"), 25);
+    CHECK_EQ(cppevent::find_case_insensitive(text, "gzip"), 19);
+    CHECK_EQ(cppevent::find_case_insensitive(text, "compress"), std::string_view::npos);
+    CHECK_EQ(cppevent::find_case_insensitive("compress", text), std::string_view::npos);
+}
