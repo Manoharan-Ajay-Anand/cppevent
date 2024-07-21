@@ -40,10 +40,12 @@ cppevent::awaitable_task<bool> cppevent::http_body::has_incoming() {
 cppevent::awaitable_task<long> cppevent::http_body::read(void* dest, long size) {
     long total_read = 0;
     
-    while (total_read < size && co_await has_incoming()) {
-        long to_read = std::min(size - total_read, m_incoming);
-        co_await m_sock.read(dest, to_read, true);
-        total_read += to_read;
+    while (total_read < size) {
+        if (!co_await has_incoming()) break;
+        long size_to_read = std::min(size - total_read, m_incoming);
+        co_await m_sock.read(dest, size_to_read, true);
+        m_incoming -= size_to_read;
+        total_read += size_to_read;
     }
 
     co_return total_read;
@@ -52,10 +54,12 @@ cppevent::awaitable_task<long> cppevent::http_body::read(void* dest, long size) 
 cppevent::awaitable_task<long> cppevent::http_body::read(std::string& dest, long size) {
     long total_read = 0;
     
-    while (total_read < size && co_await has_incoming()) {
-        long to_read = std::min(size - total_read, m_incoming);
-        co_await m_sock.read(dest, to_read, true);
-        total_read += to_read;
+    while (total_read < size) {
+        if (!co_await has_incoming()) break;
+        long size_to_read = std::min(size - total_read, m_incoming);
+        co_await m_sock.read(dest, size_to_read, true);
+        m_incoming -= size_to_read;
+        total_read += size_to_read;
     }
 
     co_return total_read;
@@ -64,10 +68,12 @@ cppevent::awaitable_task<long> cppevent::http_body::read(std::string& dest, long
 cppevent::awaitable_task<long> cppevent::http_body::skip(long size) {
     long total_skipped = 0;
     
-    while (total_skipped < size && co_await has_incoming()) {
-        long to_skip = std::min(size - total_skipped, m_incoming);
-        co_await m_sock.skip(to_skip, true);
-        total_skipped += to_skip;
+    while (total_skipped < size) {
+        if (!co_await has_incoming()) break;
+        long size_to_skip = std::min(size - total_skipped, m_incoming);
+        co_await m_sock.skip(size_to_skip, true);
+        m_incoming -= size_to_skip;
+        total_skipped += size_to_skip;
     }
 
     co_return total_skipped;
