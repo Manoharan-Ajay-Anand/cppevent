@@ -4,6 +4,8 @@
 #include "types.hpp"
 #include "http_string.hpp"
 
+#include <cppevent_base/task.hpp>
+
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -16,15 +18,23 @@ class http_output {
 private:
     HTTP_VERSION m_version;
     socket& m_sock;
+    HTTP_STATUS m_status = HTTP_STATUS::OK;
 
-    std::string m_status_line;
     std::vector<http_string> m_header_names;
     header_map m_header_lookup;
+
+    bool m_headers_flushed = false;
+
+    awaitable_task<void> raw_write(const void* src, long size);
+    awaitable_task<void> raw_write(std::string_view sv);
+
+    awaitable_task<void> flush_headers();
 public:
     http_output(HTTP_VERSION version, socket& sock);
 
     void set_status(HTTP_STATUS status);
     void set_header(std::string_view name, std::string_view value);
+    void set_content_len(long len);
 };
 
 }
