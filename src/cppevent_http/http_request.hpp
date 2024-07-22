@@ -13,18 +13,6 @@
 
 namespace cppevent {
 
-enum class HTTP_METHOD {
-    GET,
-    POST,
-    HEAD,
-    OPTIONS
-};
-
-enum class HTTP_VERSION {
-    HTTP_1_0,
-    HTTP_1_1
-};
-
 class http_request {
 private:
     HTTP_METHOD m_method;

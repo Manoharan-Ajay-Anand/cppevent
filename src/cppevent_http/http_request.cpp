@@ -62,12 +62,11 @@ bool cppevent::http_request::process_header_line(std::string_view line) {
 
     http_string key = trim_string(line.substr(0, pos));
     std::string_view key_v = key.get_view();
+    std::string_view value_v = trim_string(line.substr(pos + 1));
+    if (key_v.empty() || value_v.empty()) return false;
+
     m_header_names.push_back(std::move(key));
-
-    std::string value { trim_string(line.substr(pos + 1)) };
-    if (key_v.empty() || value.empty()) return false;
-
-    m_header_lookup[key_v] = std::move(value);
+    m_header_lookup[key_v] = value_v;
     return true;
 }
 
