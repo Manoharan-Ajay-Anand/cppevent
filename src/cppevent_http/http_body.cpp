@@ -6,6 +6,7 @@
 
 #include <charconv>
 #include <algorithm>
+#include <stdexcept>
 
 cppevent::http_body::http_body(long incoming, bool ended, socket& sock): m_incoming(incoming),
                                                                          m_ended(ended),
@@ -22,17 +23,22 @@ cppevent::awaitable_task<bool> cppevent::http_body::has_incoming() {
         line = co_await read_http_line(m_sock);
     }
 
-    if (line.has_value()) {
-        long chunk_len = 0;
-        std::string_view sv = line.m_val;
-        std::from_chars_result result = std::from_chars(sv.begin(), sv.end(), chunk_len, 16);
-        if (result.ec == std::errc {} && chunk_len == 0) {
-            co_await read_http_line(m_sock);
-        }
-        m_incoming = chunk_len;
+    if (!line.has_value()) {
+        throw std::runtime_error("http_body has_incoming: no chunk");
     }
 
-    if (m_incoming == 0) m_ended = true;
+    long chunk_len = 0;
+    std::string_view sv = line.m_val;
+    std::from_chars_result result = std::from_chars(sv.begin(), sv.end(), chunk_len, 16);
+    if (result.ec != std::errc {} || chunk_len < 0) {
+        throw std::runtime_error("http_body has_incoming: invalid chunk size");
+    }
+    m_incoming = chunk_len;
+
+    if (m_incoming == 0) {
+        m_ended = true;
+        co_await read_http_line(m_sock);
+    }
 
     co_return m_incoming > 0;
 }
