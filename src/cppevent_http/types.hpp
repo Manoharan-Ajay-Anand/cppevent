@@ -7,6 +7,8 @@
 
 namespace cppevent {
 
+constexpr int HEX_BASE = 16;
+
 struct case_insensitive_hash {
     using is_transparent = void;
 

@@ -22,6 +22,7 @@ private:
     header_map m_headers;
 
     bool m_headers_flushed = false;
+    bool m_chunked_encoding = false;
 
     awaitable_task<void> raw_write(const void* src, long size);
     awaitable_task<void> raw_write(std::string_view sv);
@@ -33,6 +34,9 @@ public:
     void set_status(HTTP_STATUS status);
     void set_header(std::string_view name, std::string_view value);
     void set_content_length(long len);
+
+    awaitable_task<void> write(const void* src, long size);
+    awaitable_task<void> write(std::string_view sv);
 };
 
 }

@@ -1,5 +1,8 @@
 #include "http_output.hpp"
 
+#include "util.hpp"
+#include "types.hpp"
+
 #include <cppevent_net/socket.hpp>
 
 #include <array>
@@ -54,16 +57,52 @@ void cppevent::http_output::set_header(std::string_view name, std::string_view v
     }
 }
 
+constexpr long SERIALIZE_BUFFER_SIZE = 256;
+
 void cppevent::http_output::set_content_length(long len) {
     if (len < 0) {
-        throw std::runtime_error("http_output set_content_len: len < 0");
+        throw std::runtime_error("http_output set_content_len: value less than 0");
     }
 
-    std::array<char, 50> arr;
-    std::to_chars_result result = std::to_chars(arr.begin(), arr.end(), len);
-    if (result.ec != std::errc {}) {
-        throw std::runtime_error("http_output set_content_len: failed to serialize len");
+    std::array<char, SERIALIZE_BUFFER_SIZE> temp;
+    std::to_chars_result result = std::to_chars(temp.begin(), temp.end(), len);
+    if (result.ec == std::errc::value_too_large) {
+        throw std::runtime_error("http_output set_content_len: value too large");
     }
 
-    set_header("content-length", std::string_view { arr.begin(), result.ptr });
+    set_header("content-length", std::string_view { temp.begin(), result.ptr });
+}
+
+constexpr std::string_view TRANSFER_ENCODING = "transfer-encoding";
+
+cppevent::awaitable_task<void> cppevent::http_output::write(const void* src, long size) {
+    if (size < 0) {
+        throw std::runtime_error("http_output write: size less than 0");
+    }
+    
+    if (!m_headers_flushed) {
+        auto t_it = m_headers.find(TRANSFER_ENCODING);
+        m_chunked_encoding = 
+                t_it != m_headers.end() &&
+                find_case_insensitive(t_it->second, "chunked") != std::string_view::npos;
+        co_await flush_headers();
+    }
+
+    if (m_chunked_encoding) {
+        std::array<char, SERIALIZE_BUFFER_SIZE> temp;
+        std::to_chars_result result = std::to_chars(temp.begin(), temp.end(), size, HEX_BASE);
+        if (result.ec == std::errc::value_too_large) {
+            throw std::runtime_error("http_output write: size too large");
+        }
+        co_await raw_write(temp.begin(), result.ptr - temp.begin());
+        co_await raw_write(CRLF_SEPARATOR);
+        co_await raw_write(src, size);
+        co_await raw_write(CRLF_SEPARATOR);
+    } else {
+        co_await raw_write(src, size);
+    }
+}
+
+cppevent::awaitable_task<void> cppevent::http_output::write(std::string_view sv) {
+    return write(sv.data(), sv.size());
 }

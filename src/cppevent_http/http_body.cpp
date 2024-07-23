@@ -1,6 +1,7 @@
 #include "http_body.hpp"
 
 #include "http_line.hpp"
+#include "types.hpp"
 
 #include <cppevent_net/socket.hpp>
 
@@ -29,7 +30,7 @@ cppevent::awaitable_task<bool> cppevent::http_body::has_incoming() {
 
     long chunk_len = 0;
     std::string_view sv = line.m_val;
-    std::from_chars_result result = std::from_chars(sv.begin(), sv.end(), chunk_len, 16);
+    std::from_chars_result result = std::from_chars(sv.begin(), sv.end(), chunk_len, HEX_BASE);
     if (result.ec != std::errc {} || chunk_len < 0) {
         throw std::runtime_error("http_body has_incoming: invalid chunk size");
     }
