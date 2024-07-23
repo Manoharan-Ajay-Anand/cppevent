@@ -35,13 +35,6 @@ cppevent::awaitable_task<cppevent::e_status> cppevent::socket::recv_incoming() {
     co_return status;
 }
 
-cppevent::awaitable_task<cppevent::e_status> cppevent::socket::send_outgoing() {
-    std::span<std::byte> chunk = m_out_buffer.get_read_chunk();
-    e_status status = co_await m_write_listener->on_send(chunk.data(), chunk.size(), MSG_NOSIGNAL);
-    if (status > 0) m_out_buffer.increment_read_p(status);
-    co_return status;
-}
-
 cppevent::awaitable_task<std::span<std::byte>> cppevent::socket::peek() {
     std::span<std::byte> chunk = m_in_buffer.get_read_chunk();
     if (chunk.size() == 0) {
@@ -149,18 +142,19 @@ cppevent::awaitable_task<void> cppevent::socket::write(const void* src, long siz
     for (total = m_out_buffer.write(src_p, size);
          total < size;
          total += m_out_buffer.write(src_p + total, size - total)) {
-        e_status status = co_await send_outgoing();
-        if (status < 0) {
-            throw_error("socket write failed: ", 0 - status);
-        }
+        co_await flush();
     }
 }
 
 cppevent::awaitable_task<void> cppevent::socket::flush() {
-    while (m_out_buffer.available() > 0) {
-        e_status status = co_await send_outgoing();
+    for (std::span<std::byte> chunk = m_out_buffer.get_read_chunk();
+         !chunk.empty();
+         chunk = m_out_buffer.get_read_chunk()) {
+        e_status status =
+                co_await m_write_listener->on_send(chunk.data(), chunk.size(), MSG_NOSIGNAL);
         if (status < 0) {
             throw_error("socket flush failed: ", 0 - status);
         }
+        m_out_buffer.increment_read_p(status);
     }
 }
