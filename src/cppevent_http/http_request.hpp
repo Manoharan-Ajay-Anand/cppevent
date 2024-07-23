@@ -1,7 +1,6 @@
 #ifndef CPPEVENT_HTTP_HTTP_REQUEST_HPP
 #define CPPEVENT_HTTP_HTTP_REQUEST_HPP
 
-#include "http_string.hpp"
 #include "types.hpp"
 
 #include <string>
@@ -24,8 +23,7 @@ private:
     std::vector<std::string_view> m_path_segments;
     std::multimap<std::string_view, std::string_view> m_query_params;
 
-    std::vector<http_string> m_header_names;
-    header_map m_header_lookup;
+    header_map m_headers;
 
     void process_uri(std::string_view uri);
 public:

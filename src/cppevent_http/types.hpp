@@ -8,14 +8,18 @@
 namespace cppevent {
 
 struct case_insensitive_hash {
+    using is_transparent = void;
+
     size_t operator()(const std::string_view& key) const;
 };
 
 struct case_insensitive_equality {
+    using is_transparent = void;
+    
     bool operator()(const std::string_view& a, const std::string_view& b) const;
 };
 
-using header_map = std::unordered_map<std::string_view, std::string,
+using header_map = std::unordered_map<std::string, std::string,
                                       case_insensitive_hash, case_insensitive_equality>;
 
 enum class HTTP_METHOD {

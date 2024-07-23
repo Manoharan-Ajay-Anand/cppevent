@@ -32,7 +32,7 @@ cppevent::awaitable_task<void> cppevent::http_output::flush_headers() {
     co_await raw_write(get_status_reason_phrase(m_status));
     co_await raw_write(CRLF_SEPARATOR);
 
-    for (auto& p : m_header_lookup) {
+    for (auto& p : m_headers) {
         co_await raw_write(p.first);
         co_await raw_write(COLON_SEPARATOR);
         co_await raw_write(p.second);
@@ -44,14 +44,13 @@ cppevent::awaitable_task<void> cppevent::http_output::flush_headers() {
 }
 
 void cppevent::http_output::set_header(std::string_view name, std::string_view value) {
-    auto it = m_header_lookup.find(name);
-    if (it != m_header_lookup.end()) {
+    if (name.empty() || value.empty()) return;
+
+    auto it = m_headers.find(name);
+    if (it != m_headers.end()) {
         it->second = value;
-    } else if (!name.empty() && !value.empty()) {
-        http_string key = name;
-        std::string_view key_v = key.get_view();
-        m_header_names.push_back(std::move(key));
-        m_header_lookup[key_v] = value;
+    } else {
+        m_headers[std::string { name }] = value;
     }
 }
 

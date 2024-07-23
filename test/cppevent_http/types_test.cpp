@@ -8,7 +8,7 @@ TEST_CASE("header map test") {
     constexpr std::string_view UPPER_CASE = "CONtent-TYPE";
     cppevent::header_map headers;
     
-    headers[LOWER_CASE] = SAMPLE_VALUE;
+    headers[std::string { LOWER_CASE }] = SAMPLE_VALUE;
 
     auto l_it = headers.find(LOWER_CASE);
     CHECK(l_it != headers.end());

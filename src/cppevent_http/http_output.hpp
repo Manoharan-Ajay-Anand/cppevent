@@ -2,7 +2,6 @@
 #define CPPEVENT_HTTP_HTTP_OUTPUT_HPP
 
 #include "types.hpp"
-#include "http_string.hpp"
 
 #include <cppevent_base/task.hpp>
 
@@ -20,8 +19,7 @@ private:
     socket& m_sock;
     HTTP_STATUS m_status = HTTP_STATUS::OK;
 
-    std::vector<http_string> m_header_names;
-    header_map m_header_lookup;
+    header_map m_headers;
 
     bool m_headers_flushed = false;
 
