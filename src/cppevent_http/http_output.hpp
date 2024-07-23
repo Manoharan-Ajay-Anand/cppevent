@@ -32,7 +32,7 @@ public:
 
     void set_status(HTTP_STATUS status);
     void set_header(std::string_view name, std::string_view value);
-    void set_content_len(long len);
+    void set_content_length(long len);
 };
 
 }

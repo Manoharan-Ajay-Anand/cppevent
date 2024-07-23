@@ -54,7 +54,7 @@ void cppevent::http_output::set_header(std::string_view name, std::string_view v
     }
 }
 
-void cppevent::http_output::set_content_len(long len) {
+void cppevent::http_output::set_content_length(long len) {
     if (len < 0) {
         throw std::runtime_error("http_output set_content_len: len < 0");
     }
