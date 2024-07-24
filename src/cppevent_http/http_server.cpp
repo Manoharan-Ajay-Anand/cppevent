@@ -3,6 +3,7 @@
 #include "util.hpp"
 #include "http_line.hpp"
 #include "http_request.hpp"
+#include "http_output.hpp"
 #include "http_body.hpp"
 
 #include <cppevent_net/socket.hpp>
@@ -60,6 +61,19 @@ cppevent::task cppevent::http_server::on_connection(std::unique_ptr<socket> sock
         }
 
         http_body body { content_len, content_ended, *sock };
+        http_output output { *sock };
+
+        co_await output.end();
+        
+        std::string_view connection_sv;
+        if (req.get_version() == HTTP_VERSION::HTTP_1_0) {
+            req.get_header("connection").value_or("close");
+        } else {
+            req.get_header("connection").value_or("keep-alive");
+        }
+        
+        keep_conn = !(co_await body.has_incoming()) &&
+                    find_case_insensitive(connection_sv, "keep-alive") != std::string_view::npos;
     }
     sock->shutdown();
 }

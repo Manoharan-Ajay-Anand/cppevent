@@ -36,8 +36,6 @@ enum class HTTP_VERSION {
     HTTP_1_1
 };
 
-std::string_view get_version_string(HTTP_VERSION version);
-
 enum class HTTP_STATUS {
     CONTINUE = 100,
     SWITCHING_PROTOCOLS,

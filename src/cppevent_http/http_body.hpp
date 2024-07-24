@@ -15,9 +15,10 @@ private:
     bool m_ended;
     socket& m_sock;
 
-    awaitable_task<bool> has_incoming();
 public:
     http_body(long incoming, bool ended, socket& sock);
+
+    awaitable_task<bool> has_incoming();
 
     awaitable_task<long> read(void* dest, long size);
     awaitable_task<long> read(std::string& dest, long size);

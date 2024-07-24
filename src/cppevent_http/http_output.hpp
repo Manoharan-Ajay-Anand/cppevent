@@ -15,7 +15,6 @@ class socket;
 
 class http_output {
 private:
-    HTTP_VERSION m_version;
     socket& m_sock;
     HTTP_STATUS m_status = HTTP_STATUS::OK;
 
@@ -29,7 +28,7 @@ private:
 
     awaitable_task<void> write_headers();
 public:
-    http_output(HTTP_VERSION version, socket& sock);
+    http_output(socket& sock);
 
     void set_status(HTTP_STATUS status);
     void set_header(std::string_view name, std::string_view value);

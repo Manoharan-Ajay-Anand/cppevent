@@ -9,8 +9,7 @@
 #include <charconv>
 #include <stdexcept>
 
-cppevent::http_output::http_output(HTTP_VERSION version, socket& sock): m_version(version),
-                                                                        m_sock(sock) {
+cppevent::http_output::http_output(socket& sock): m_sock(sock) {
 }
 
 void cppevent::http_output::set_status(HTTP_STATUS status) {
@@ -52,7 +51,8 @@ void cppevent::http_output::set_content_length(long len) {
     set_header("content-length", std::string_view { temp.begin(), result.ptr });
 }
 
-constexpr std::string_view SPACE_SEPARATOR = " ";
+constexpr std::string_view HTTP_1_1_STR = "HTTP/1.1 ";
+
 constexpr std::string_view COLON_SEPARATOR = ": ";
 constexpr std::string_view CRLF_SEPARATOR = "\r\n";
 
@@ -67,8 +67,7 @@ cppevent::awaitable_task<void> cppevent::http_output::write_headers() {
     m_chunked_encoding = t_it != m_headers.end() &&
                          find_case_insensitive(t_it->second, "chunked") != std::string_view::npos;
     
-    co_await raw_write(get_version_string(m_version));
-    co_await raw_write(SPACE_SEPARATOR);
+    co_await raw_write(HTTP_1_1_STR);
     co_await raw_write(get_status_reason_phrase(m_status));
     co_await raw_write(CRLF_SEPARATOR);
 

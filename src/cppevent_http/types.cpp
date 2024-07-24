@@ -25,17 +25,6 @@ bool cppevent::case_insensitive_equality::operator()(const std::string_view& a,
     return true;
 }
 
-std::string_view cppevent::get_version_string(HTTP_VERSION version) {
-    switch (version) {
-        case HTTP_VERSION::HTTP_1_0:
-            return "HTTP/1.0";
-        case HTTP_VERSION::HTTP_1_1:
-            return "HTTP/1.1";
-        default:
-            throw std::runtime_error("get_version_string: unknown version");
-    }
-}
-
 std::string_view cppevent::get_status_reason_phrase(HTTP_STATUS status) {
     switch (status) {
         case HTTP_STATUS::CONTINUE:
