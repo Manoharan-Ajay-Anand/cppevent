@@ -21,13 +21,13 @@ private:
 
     header_map m_headers;
 
-    bool m_headers_flushed = false;
+    bool m_headers_written = false;
     bool m_chunked_encoding = false;
 
     awaitable_task<void> raw_write(const void* src, long size);
     awaitable_task<void> raw_write(std::string_view sv);
 
-    awaitable_task<void> flush_headers();
+    awaitable_task<void> write_headers();
 public:
     http_output(HTTP_VERSION version, socket& sock);
 
@@ -37,6 +37,8 @@ public:
 
     awaitable_task<void> write(const void* src, long size);
     awaitable_task<void> write(std::string_view sv);
+
+    awaitable_task<void> end();
 };
 
 }
