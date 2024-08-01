@@ -71,12 +71,12 @@ private:
     long* m_conn_count;
     bool m_query_ready = false;
 
-    awaitable_task<void> handle_auth(response_info info,
+    task<> handle_auth(response_info info,
                                      const pg_config& config, scram& scr);
 
-    awaitable_task<response_info> get_response_info(bool ignore_notice = true);
+    task<response_info> get_response_info(bool ignore_notice = true);
 
-    awaitable_task<void> populate_result(response_info info, pg_result& result);
+    task<> populate_result(response_info info, pg_result& result);
 
 public:
     pg_connection(std::unique_ptr<socket>&& sock, long* conn_count);
@@ -85,15 +85,15 @@ public:
     pg_connection(pg_connection&& other);
     pg_connection& operator=(pg_connection&& other);
 
-    awaitable_task<void> init(const pg_config& config, crypto& crypt);
+    task<> init(const pg_config& config, crypto& crypt);
 
-    awaitable_task<std::vector<pg_result>> query(const std::string& q);
+    task<std::vector<pg_result>> query(const std::string& q);
 
-    awaitable_task<void> prepare_query(const std::string& q, const pg_params& params);
+    task<> prepare_query(const std::string& q, const pg_params& params);
 
-    awaitable_task<pg_result> execute(long max_rows = 0);
+    task<pg_result> execute(long max_rows = 0);
 
-    awaitable_task<void> close_sync();
+    task<> close_sync();
 };
 
 }

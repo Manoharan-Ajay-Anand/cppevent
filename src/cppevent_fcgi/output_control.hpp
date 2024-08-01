@@ -48,7 +48,7 @@ private:
 
 public:
 
-    awaitable_task<void> begin_res_task(socket& sock);
+    task<> begin_res_task(socket& sock);
 
     fcgi_write_awaiter write(long m_type, long m_req_id, const void* m_src, long m_size);
 };

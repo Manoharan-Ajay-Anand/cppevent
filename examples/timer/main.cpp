@@ -8,7 +8,7 @@
 
 using namespace std::chrono_literals;
 
-cppevent::awaitable_task<void> queue_coroutine(cppevent::async_queue<int>& aq) {
+cppevent::task<> queue_coroutine(cppevent::async_queue<int>& aq) {
     while(true) {
         co_await aq.await_items();
         std::cout << "Received item in async queue: " << aq.front() << std::endl;
@@ -16,9 +16,9 @@ cppevent::awaitable_task<void> queue_coroutine(cppevent::async_queue<int>& aq) {
     }
 }
 
-cppevent::task timed_coroutine(cppevent::event_loop& e_loop) {
+cppevent::task<> timed_coroutine(cppevent::event_loop& e_loop) {
     cppevent::async_queue<int> aq(e_loop);
-    cppevent::awaitable_task<void> t = queue_coroutine(aq);
+    cppevent::task<> t = queue_coroutine(aq);
     cppevent::timer timer(2s, e_loop);
     std::cout << "Starting timed coroutine which triggers every 2 secs 5 times" << std::endl;
     for (int i = 1; i <= 5; ++i) {

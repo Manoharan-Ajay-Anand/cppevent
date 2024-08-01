@@ -28,9 +28,9 @@ public:
     stream(socket& conn);
 
     stream_readable_awaiter can_read();
-    awaitable_task<long> read(void* dest, long size, bool read_fully);
-    awaitable_task<long> read(std::string& dest, long size, bool read_fully);
-    awaitable_task<long> skip(long size, bool skip_fully);
+    task<long> read(void* dest, long size, bool read_fully);
+    task<long> read(std::string& dest, long size, bool read_fully);
+    task<long> skip(long size, bool skip_fully);
 
     stream_update_awaiter update(long remaining);
 };

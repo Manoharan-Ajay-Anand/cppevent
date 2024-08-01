@@ -26,7 +26,7 @@ cppevent::timer::~timer() {
     throw_if_error(status, "Failed to close timer fd: ");
 }
 
-cppevent::awaitable_task<void> cppevent::timer::wait() {
+cppevent::task<> cppevent::timer::wait() {
     std::array<std::byte, 8> buf;
     auto status = co_await m_listener->on_read(buf.data(), 8);
     throw_if_error(status, "Timer wait failed: ");

@@ -10,7 +10,7 @@ bool cppevent::http_line::is_last_line() const {
     return m_received && m_val.empty();
 }
 
-cppevent::awaitable_task<cppevent::http_line> cppevent::read_http_line(socket& sock) {
+cppevent::task<cppevent::http_line> cppevent::read_http_line(socket& sock) {
     std::string line;
     bool line_ended = false;
     while (!line_ended) {

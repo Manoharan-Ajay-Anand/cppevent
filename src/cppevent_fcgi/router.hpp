@@ -33,7 +33,7 @@ private:
 public:
     void insert(const std::vector<std::string_view>& segments, long i,
                 endpoint& endpoint, REQUEST_METHOD method);
-    awaitable_task<void> process(const std::vector<std::string_view>& segments, long i,
+    task<> process(const std::vector<std::string_view>& segments, long i,
                                  context& cont, stream& s_stdin, output& o_stdout);
 };
 
@@ -44,7 +44,7 @@ public:
     void get(std::string_view path, endpoint& endpoint);
     void post(std::string_view path, endpoint& endpoint);
 
-    awaitable_task<void> process(context& cont, stream& s_stdin, output& o_stdout);
+    task<> process(context& cont, stream& s_stdin, output& o_stdout);
 };
 
 }

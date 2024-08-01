@@ -17,7 +17,7 @@ struct http_line {
     bool is_last_line() const;
 };
 
-awaitable_task<http_line> read_http_line(socket& sock);
+task<http_line> read_http_line(socket& sock);
 
 }
 

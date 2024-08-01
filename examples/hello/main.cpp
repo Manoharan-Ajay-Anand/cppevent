@@ -6,7 +6,7 @@
 
 class hello_endpoint : public cppevent::endpoint {
 public:
-    cppevent::awaitable_task<void> process(const cppevent::context& cont,
+    cppevent::task<> process(const cppevent::context& cont,
                                            cppevent::stream& s_stdin, cppevent::output& o_stdout) {
         co_await o_stdout.write("content-length: 5\ncontent-type: text/plain\n\nhello");
     }

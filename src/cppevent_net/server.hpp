@@ -16,7 +16,7 @@ class event_loop;
 
 class connection_handler {
 public:
-    virtual task on_connection(std::unique_ptr<socket> sock) = 0;
+    virtual task<> on_connection(std::unique_ptr<socket> sock) = 0;
 };
 
 class server {
@@ -24,7 +24,7 @@ private:
     server_socket m_socket;
     connection_handler& m_handler;
 
-    task accept_connections();
+    task<> accept_connections();
 public:
     server(const char* name, const char* service, event_loop& loop, connection_handler& handler);
     server(const char* unix_path, event_loop& loop, connection_handler& handler);

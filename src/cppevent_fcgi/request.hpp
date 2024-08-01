@@ -25,7 +25,7 @@ private:
     output m_stdout;
     output m_endreq;
 
-    awaitable_task<void> m_task;
+    task<> m_task;
 
     stream* get_stream(int type);
 

@@ -16,11 +16,11 @@ void cppevent::http_output::set_status(HTTP_STATUS status) {
     m_status = status;
 }
 
-cppevent::awaitable_task<void> cppevent::http_output::raw_write(const void* src, long size) {
+cppevent::task<> cppevent::http_output::raw_write(const void* src, long size) {
     return m_sock.write(src, size);
 }
 
-cppevent::awaitable_task<void> cppevent::http_output::raw_write(std::string_view s) {
+cppevent::task<> cppevent::http_output::raw_write(std::string_view s) {
     return raw_write(s.data(), s.size());
 }
 
@@ -58,7 +58,7 @@ constexpr std::string_view CRLF_SEPARATOR = "\r\n";
 
 constexpr std::string_view TRANSFER_ENCODING = "transfer-encoding";
 
-cppevent::awaitable_task<void> cppevent::http_output::write_headers() {
+cppevent::task<> cppevent::http_output::write_headers() {
     if (m_headers_written) {
         co_return;
     }
@@ -82,7 +82,7 @@ cppevent::awaitable_task<void> cppevent::http_output::write_headers() {
     m_headers_written = true;
 }
 
-cppevent::awaitable_task<void> cppevent::http_output::write(const void* src, long size) {
+cppevent::task<> cppevent::http_output::write(const void* src, long size) {
     if (size <= 0) {
         throw std::runtime_error("http_output write: size less than or equal 0");
     }
@@ -104,13 +104,13 @@ cppevent::awaitable_task<void> cppevent::http_output::write(const void* src, lon
     }
 }
 
-cppevent::awaitable_task<void> cppevent::http_output::write(std::string_view sv) {
+cppevent::task<> cppevent::http_output::write(std::string_view sv) {
     return write(sv.data(), sv.size());
 }
 
 constexpr std::string_view LAST_CHUNK = "0\r\n\r\n";
 
-cppevent::awaitable_task<void> cppevent::http_output::end() {
+cppevent::task<> cppevent::http_output::end() {
     co_await write_headers();
     
     if (m_chunked_encoding) {

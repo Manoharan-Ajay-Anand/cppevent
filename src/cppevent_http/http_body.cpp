@@ -14,7 +14,7 @@ cppevent::http_body::http_body(long incoming, bool ended, socket& sock): m_incom
                                                                          m_sock(sock) {    
 }
 
-cppevent::awaitable_task<bool> cppevent::http_body::has_incoming() {
+cppevent::task<bool> cppevent::http_body::has_incoming() {
     if (m_incoming > 0 || m_ended) {
         co_return m_incoming > 0;
     }
@@ -44,7 +44,7 @@ cppevent::awaitable_task<bool> cppevent::http_body::has_incoming() {
     co_return m_incoming > 0;
 }
 
-cppevent::awaitable_task<long> cppevent::http_body::read(void* dest, long size) {
+cppevent::task<long> cppevent::http_body::read(void* dest, long size) {
     long total_read = 0;
     
     while (total_read < size) {
@@ -58,7 +58,7 @@ cppevent::awaitable_task<long> cppevent::http_body::read(void* dest, long size) 
     co_return total_read;
 }
 
-cppevent::awaitable_task<long> cppevent::http_body::read(std::string& dest, long size) {
+cppevent::task<long> cppevent::http_body::read(std::string& dest, long size) {
     long total_read = 0;
     
     while (total_read < size) {
@@ -72,7 +72,7 @@ cppevent::awaitable_task<long> cppevent::http_body::read(std::string& dest, long
     co_return total_read;
 }
 
-cppevent::awaitable_task<long> cppevent::http_body::skip(long size) {
+cppevent::task<long> cppevent::http_body::skip(long size) {
     long total_skipped = 0;
     
     while (total_skipped < size) {

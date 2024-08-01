@@ -11,7 +11,7 @@ namespace cppevent {
 
 class endpoint {
 public:
-    virtual awaitable_task<void> process(const context& cont,
+    virtual task<> process(const context& cont,
                                          stream& s_stdin, output& o_stdout) = 0;
 };
 

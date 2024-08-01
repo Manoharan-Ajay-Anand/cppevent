@@ -12,7 +12,7 @@ public:
     http_server(const char* name, const char* service, event_loop& loop);
     http_server(const char* unix_path, event_loop& loop);
 
-    task on_connection(std::unique_ptr<socket> sock);
+    task<> on_connection(std::unique_ptr<socket> sock);
 };
 
 }

@@ -32,7 +32,7 @@ struct header_len {
 
 }
 
-cppevent::awaitable_task<cppevent::header_len> get_lengths(cppevent::stream& s) {
+cppevent::task<cppevent::header_len> get_lengths(cppevent::stream& s) {
     long result[2];
     uint8_t data[4];
     for (int i = 0; i < 2; ++i) {
@@ -48,7 +48,7 @@ cppevent::awaitable_task<cppevent::header_len> get_lengths(cppevent::stream& s) 
     co_return cppevent::header_len { result[0], result[1] };
 }
 
-cppevent::awaitable_task<void> get_headers(cppevent::stream& s_params,
+cppevent::task<> get_headers(cppevent::stream& s_params,
                                            std::unordered_map<std::string_view,
                                                               std::string_view>& header_map,
                                            std::string& header_buf) {
@@ -72,7 +72,7 @@ cppevent::awaitable_task<void> get_headers(cppevent::stream& s_params,
     }
 }
 
-cppevent::awaitable_task<void> cppevent::fcgi_handler::handle_request(stream& s_params,
+cppevent::task<> cppevent::fcgi_handler::handle_request(stream& s_params,
                                                                       stream& s_stdin,
                                                                       output& o_stdout,
                                                                       output& o_endreq,

@@ -28,14 +28,14 @@ void cppevent::socket::shutdown() {
     throw_if_error(status, "Failed to shutdown socket fd: ");
 }
 
-cppevent::awaitable_task<cppevent::e_status> cppevent::socket::recv_incoming() {
+cppevent::task<cppevent::e_status> cppevent::socket::recv_incoming() {
     std::span<std::byte> chunk = m_in_buffer.get_write_chunk();
     e_status status = co_await m_read_listener->on_recv(chunk.data(), chunk.size(), 0);
     if (status > 0) m_in_buffer.increment_write_p(status);
     co_return status;
 }
 
-cppevent::awaitable_task<std::span<std::byte>> cppevent::socket::peek() {
+cppevent::task<std::span<std::byte>> cppevent::socket::peek() {
     std::span<std::byte> chunk = m_in_buffer.get_read_chunk();
     if (chunk.size() == 0) {
         e_status status = co_await recv_incoming();
@@ -51,7 +51,7 @@ void cppevent::socket::seek(long offset) {
     m_in_buffer.increment_read_p(offset);
 }
 
-cppevent::awaitable_task<long> cppevent::socket::read(void* dest, long size, bool read_fully) {
+cppevent::task<long> cppevent::socket::read(void* dest, long size, bool read_fully) {
     std::byte* dest_p = static_cast<std::byte*>(dest);
     long total;
 
@@ -74,7 +74,7 @@ cppevent::awaitable_task<long> cppevent::socket::read(void* dest, long size, boo
 
 
 
-cppevent::awaitable_task<long> cppevent::socket::read(std::string& dest, long size, bool read_fully) {
+cppevent::task<long> cppevent::socket::read(std::string& dest, long size, bool read_fully) {
     e_status status = 0;
     long total;
 
@@ -95,7 +95,7 @@ cppevent::awaitable_task<long> cppevent::socket::read(std::string& dest, long si
     co_return total;
 }
 
-cppevent::awaitable_task<int> cppevent::socket::read_c(bool read_fully) {
+cppevent::task<int> cppevent::socket::read_c(bool read_fully) {
     if (m_in_buffer.available() == 0) {
         e_status status = co_await recv_incoming();
         if (status < 0) {
@@ -114,7 +114,7 @@ long skip_buffer(cppevent::byte_buffer<BUFFER_SIZE>& buf, long size) {
     return to_skip;
 }
 
-cppevent::awaitable_task<long> cppevent::socket::skip(long size, bool skip_fully) {
+cppevent::task<long> cppevent::socket::skip(long size, bool skip_fully) {
     e_status status = 0;
     long total;
 
@@ -135,7 +135,7 @@ cppevent::awaitable_task<long> cppevent::socket::skip(long size, bool skip_fully
     co_return total;
 }
 
-cppevent::awaitable_task<void> cppevent::socket::write(const void* src, long size) {
+cppevent::task<> cppevent::socket::write(const void* src, long size) {
     const std::byte* src_p = static_cast<const std::byte*>(src);
     long total;
 
@@ -146,7 +146,7 @@ cppevent::awaitable_task<void> cppevent::socket::write(const void* src, long siz
     }
 }
 
-cppevent::awaitable_task<void> cppevent::socket::flush() {
+cppevent::task<> cppevent::socket::flush() {
     for (std::span<std::byte> chunk = m_out_buffer.get_read_chunk();
          !chunk.empty();
          chunk = m_out_buffer.get_read_chunk()) {

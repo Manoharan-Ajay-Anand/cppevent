@@ -25,7 +25,7 @@ cppevent::http_server::http_server(const char* unix_path,
                                    event_loop& loop): m_serv(unix_path, loop, *this) {
 }
 
-cppevent::task cppevent::http_server::on_connection(std::unique_ptr<socket> sock) {
+cppevent::task<> cppevent::http_server::on_connection(std::unique_ptr<socket> sock) {
     bool keep_conn = true;
     while (keep_conn) {
         http_request req;

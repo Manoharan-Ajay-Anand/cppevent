@@ -43,7 +43,7 @@ void cppevent::fcgi_write_awaiter::await_resume() {
 
 constexpr uint8_t PADDING_DATA[cppevent::FCGI_MAX_PADDING] = {};
 
-cppevent::awaitable_task<void> cppevent::output_control::begin_res_task(socket& sock) {
+cppevent::task<> cppevent::output_control::begin_res_task(socket& sock) {
     while (true) {
         co_await output_task_awaiter { m_out_records, m_suspended_output };
         output_record& o = m_out_records.front();

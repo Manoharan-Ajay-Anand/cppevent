@@ -26,15 +26,15 @@ private:
     fcgi_handler m_handler;
     server m_server;
 
-    awaitable_task<void> read_req(socket& sock,
-                                  output_control& control,
-                                  request_map& requests,
-                                  signal_trigger trigger);
+    task<> read_req(socket& sock,
+                    output_control& control,
+                    request_map& requests,
+                    signal_trigger trigger);
 public:
     fcgi_server(const char* name, const char* service, event_loop& loop, router& router);
     fcgi_server(const char* unix_path, event_loop& loop, router& router);
 
-    task on_connection(std::unique_ptr<socket> sock);
+    task<> on_connection(std::unique_ptr<socket> sock);
 };
 
 }

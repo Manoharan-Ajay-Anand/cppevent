@@ -34,7 +34,7 @@ cppevent::client_socket::~client_socket() {
     }
 }
 
-cppevent::awaitable_task<std::unique_ptr<cppevent::socket>> cppevent::client_socket::connect() const {
+cppevent::task<std::unique_ptr<cppevent::socket>> cppevent::client_socket::connect() const {
     int fd;
     if (m_is_unix_socket) {
         fd = ::socket(AF_UNIX, SOCK_STREAM, 0);

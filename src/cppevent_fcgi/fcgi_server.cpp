@@ -28,7 +28,7 @@ cppevent::fcgi_server::fcgi_server(const char* unix_path,
                                                     m_server(unix_path, loop, *this) {
 }
 
-cppevent::awaitable_task<void> cppevent::fcgi_server::read_req(socket& sock,
+cppevent::task<> cppevent::fcgi_server::read_req(socket& sock,
                                                                output_control& control,
                                                                request_map& requests,
                                                                signal_trigger trigger) {
@@ -71,7 +71,7 @@ cppevent::awaitable_task<void> cppevent::fcgi_server::read_req(socket& sock,
     trigger.activate();
 }
 
-cppevent::task cppevent::fcgi_server::on_connection(std::unique_ptr<socket> sock) {
+cppevent::task<> cppevent::fcgi_server::on_connection(std::unique_ptr<socket> sock) {
     async_signal signal { m_loop };
     request_map requests;
     output_control control;

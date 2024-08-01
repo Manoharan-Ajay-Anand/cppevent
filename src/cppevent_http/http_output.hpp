@@ -23,10 +23,10 @@ private:
     bool m_headers_written = false;
     bool m_chunked_encoding = false;
 
-    awaitable_task<void> raw_write(const void* src, long size);
-    awaitable_task<void> raw_write(std::string_view sv);
+    task<> raw_write(const void* src, long size);
+    task<> raw_write(std::string_view sv);
 
-    awaitable_task<void> write_headers();
+    task<> write_headers();
 public:
     http_output(socket& sock);
 
@@ -34,10 +34,10 @@ public:
     void set_header(std::string_view name, std::string_view value);
     void set_content_length(long len);
 
-    awaitable_task<void> write(const void* src, long size);
-    awaitable_task<void> write(std::string_view sv);
+    task<> write(const void* src, long size);
+    task<> write(std::string_view sv);
 
-    awaitable_task<void> end();
+    task<> end();
 };
 
 }

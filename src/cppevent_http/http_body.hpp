@@ -18,11 +18,11 @@ private:
 public:
     http_body(long incoming, bool ended, socket& sock);
 
-    awaitable_task<bool> has_incoming();
+    task<bool> has_incoming();
 
-    awaitable_task<long> read(void* dest, long size);
-    awaitable_task<long> read(std::string& dest, long size);
-    awaitable_task<long> skip(long size);
+    task<long> read(void* dest, long size);
+    task<long> read(std::string& dest, long size);
+    task<long> skip(long size);
 };
 
 }

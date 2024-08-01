@@ -19,7 +19,7 @@ public:
     async_queue(event_loop& loop): m_loop(loop), m_callback(loop.get_event_callback()) {
     }
 
-    awaitable_task<long> await_items() {
+    task<long> await_items() {
         while (m_items.empty()) {
             co_await m_callback.await_status();
         }

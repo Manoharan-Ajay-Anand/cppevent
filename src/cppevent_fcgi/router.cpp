@@ -42,11 +42,11 @@ void cppevent::route_node::insert(const std::vector<std::string_view>& segments,
     next_node->insert(segments, i + 1, endpoint, method);
 }
 
-cppevent::awaitable_task<void> route_not_found(cppevent::output& o_stdout) {
+cppevent::task<> route_not_found(cppevent::output& o_stdout) {
     co_await o_stdout.write("status: 404\ncontent-length: 0\n\n");
 }
 
-cppevent::awaitable_task<void> cppevent::route_node::process(
+cppevent::task<> cppevent::route_node::process(
         const std::vector<std::string_view>& segments, long i,
         context& cont, stream& s_stdin, output& o_stdout) {
     if (i == segments.size()) {
@@ -96,7 +96,7 @@ void cppevent::router::post(std::string_view path, endpoint& endpoint) {
     m_node.insert(segments, 0, endpoint, REQUEST_METHOD::POST);
 }
 
-cppevent::awaitable_task<void> cppevent::router::process(context& cont, stream& s_stdin,
+cppevent::task<> cppevent::router::process(context& cont, stream& s_stdin,
                                                          output& o_stdout) {
     std::vector<std::string_view> segments = split_path(cont.get_path());
     return m_node.process(segments, 0, cont, s_stdin, o_stdout);

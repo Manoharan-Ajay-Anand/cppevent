@@ -21,7 +21,7 @@ private:
 public:
     fcgi_handler(router& r);
     
-    awaitable_task<void> handle_request(stream& s_params, stream& s_stdin,
+    task<> handle_request(stream& s_params, stream& s_stdin,
                                         output& o_stdout, output& o_endreq,
                                         signal_trigger close_trigger, bool close_conn);
 };

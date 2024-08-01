@@ -7,7 +7,7 @@
 #define SAMPLE_NUM 100
 #define MULTIPLIER 2
 
-cppevent::task multiply_num(int& num, cppevent::event_callback& cb) {
+cppevent::task<> multiply_num(int& num, cppevent::event_callback& cb) {
     num *= co_await cb.await_status();
 }
 

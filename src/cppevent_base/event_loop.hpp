@@ -27,7 +27,7 @@ private:
     void run_ops();
     void notify_events();
     
-    awaitable_task<void> run_internal_loop();
+    task<> run_internal_loop();
 
 public:
     event_loop();
