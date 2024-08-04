@@ -28,7 +28,7 @@ struct split_path {
         for (start = 0; start < path.size() && path[start] == '/'; ++start);
         long end;
         for (end = start; end < path.size() && path[end] != '/'; ++end);
-        return { path.substr(start, end), path.substr(end) };
+        return { path.substr(start, end - start), path.substr(end) };
     }
 };
 
@@ -48,14 +48,14 @@ void cppevent::http_router::set_endpoint(HTTP_METHOD method,
     std::string_view segment = sp.m_first;
     std::unique_ptr<http_router>* next;
     if (segment.starts_with(':') && segment.size() > 1) {
-        std::string_view variable = segment.substr(1);
-        if (!m_variable.empty() && m_variable != variable) {
-            throw std::runtime_error("http_router set_endpoint: path variable clash");
+        std::string_view param = segment.substr(1);
+        if (!m_path_param.empty() && m_path_param != param) {
+            throw std::runtime_error("http_router set_endpoint: path parameter name clash");
         }
-        m_variable = variable;
-        next = &m_var_route;
+        m_path_param = param;
+        next = &m_param_route;
     } else if (segment.starts_with(':')) {
-        throw std::runtime_error("http_router set_endpoint: invalid path variable name");
+        throw std::runtime_error("http_router set_endpoint: invalid path parameter name");
     } else {
         next = &(m_routes[segment]);
     }
@@ -86,9 +86,9 @@ cppevent::http_endpoint* cppevent::http_router::match(HTTP_METHOD method,
     auto it = m_routes.find(sp.m_first);
     if (it != m_routes.end()) {
         return it->second->match(method, sp.m_remaining, variables);
-    } else if (!m_variable.empty()) {
-        variables[m_variable] = sp.m_first;
-        return m_var_route->match(method, path, variables);
+    } else if (!m_path_param.empty()) {
+        variables[m_path_param] = sp.m_first;
+        return m_param_route->match(method, path, variables);
     }
     return nullptr;
 }

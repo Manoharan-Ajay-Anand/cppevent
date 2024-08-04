@@ -18,9 +18,11 @@ private:
     HTTP_VERSION m_version;
 
     std::string m_uri;
+
     std::string_view m_path;
+    std::unordered_map<std::string_view, std::string_view> m_path_params;
+
     std::string_view m_query;
-    std::vector<std::string_view> m_path_segments;
     std::multimap<std::string_view, std::string_view> m_query_params;
 
     header_map m_headers;
@@ -34,7 +36,8 @@ public:
     HTTP_VERSION get_version() const;
 
     std::string_view get_path() const;
-    const std::vector<std::string_view>& get_path_segments() const;
+    void set_path_params(const std::unordered_map<std::string_view, std::string_view>& params);
+    std::optional<std::string_view> get_path_param(std::string_view key) const;
 
     std::string_view get_query() const;
     std::optional<std::string_view> get_query_param(std::string_view key) const;

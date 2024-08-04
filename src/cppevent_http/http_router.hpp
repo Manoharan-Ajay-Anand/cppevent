@@ -18,8 +18,8 @@ private:
 
     std::unordered_map<std::string_view, std::unique_ptr<http_router>> m_routes;
 
-    std::string_view m_variable;
-    std::unique_ptr<http_router> m_var_route;
+    std::string_view m_path_param;
+    std::unique_ptr<http_router> m_param_route;
 
     http_endpoint*& get_endpoint_var(HTTP_METHOD method);
 

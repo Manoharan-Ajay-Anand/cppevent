@@ -13,7 +13,6 @@ void cppevent::http_request::process_uri(std::string_view uri) {
     for (; q_it != m_uri.end() && *q_it != '?'; ++q_it);
     
     m_path = { m_uri.begin(), q_it };
-    m_path_segments = split_string(m_path, '/');
 
     if (q_it != m_uri.end()) {
         m_query = std::string_view { q_it + 1, m_uri.end() };
@@ -80,8 +79,17 @@ std::string_view cppevent::http_request::get_path() const {
     return m_path;
 }
 
-const std::vector<std::string_view>& cppevent::http_request::get_path_segments() const {
-    return m_path_segments;
+void cppevent::http_request::set_path_params(const std::unordered_map<std::string_view,
+                                                                      std::string_view>& params) {
+    m_path_params = params;
+}
+
+std::optional<std::string_view> cppevent::http_request::get_path_param(std::string_view key) const {
+    auto it = m_path_params.find(key);
+    if (it == m_path_params.end()) {
+        return {};
+    }
+    return { it->second };
 }
 
 std::string_view cppevent::http_request::get_query() const {
