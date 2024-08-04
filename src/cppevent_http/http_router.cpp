@@ -77,7 +77,7 @@ void cppevent::http_router::post(std::string_view path, http_endpoint* endpoint)
 cppevent::http_endpoint* cppevent::http_router::match(HTTP_METHOD method,
                                                       std::string_view path,
                                                       std::unordered_map<std::string_view,
-                                                                     std::string_view>& variables) {
+                                                                     std::string_view>& path_params) {
     split_path sp = split_path::split(path);
     if (sp.is_root()) {
         return get_endpoint_var(method);
@@ -85,10 +85,10 @@ cppevent::http_endpoint* cppevent::http_router::match(HTTP_METHOD method,
 
     auto it = m_routes.find(sp.m_first);
     if (it != m_routes.end()) {
-        return it->second->match(method, sp.m_remaining, variables);
+        return it->second->match(method, sp.m_remaining, path_params);
     } else if (!m_path_param.empty()) {
-        variables[m_path_param] = sp.m_first;
-        return m_param_route->match(method, path, variables);
+        path_params[m_path_param] = sp.m_first;
+        return m_param_route->match(method, sp.m_remaining, path_params);
     }
     return nullptr;
 }

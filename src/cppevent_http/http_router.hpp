@@ -34,7 +34,7 @@ public:
 
     http_endpoint* match(HTTP_METHOD method,
                          std::string_view path,
-                         std::unordered_map<std::string_view, std::string_view>& variables);
+                         std::unordered_map<std::string_view, std::string_view>& path_params);
 };
 
 }
