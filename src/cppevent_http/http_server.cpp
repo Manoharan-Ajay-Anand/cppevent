@@ -5,10 +5,12 @@
 #include "http_request.hpp"
 #include "http_output.hpp"
 #include "http_body.hpp"
+#include "http_router.hpp"
+#include "http_endpoint.hpp"
 
 #include <cppevent_net/socket.hpp>
 
-#include <vector>
+#include <unordered_map>
 #include <string_view>
 #include <charconv>
 
@@ -18,11 +20,24 @@ constexpr std::string_view TRANSFER_ENCODING = "transfer-encoding";
 
 cppevent::http_server::http_server(const char* name,
                                    const char* service,
-                                   event_loop& loop): m_serv(name, service, loop, *this) {
+                                   http_router& router,
+                                   event_loop& loop): m_serv(name, service, loop, *this),
+                                                      m_router(router) {
 }
 
 cppevent::http_server::http_server(const char* unix_path,
-                                   event_loop& loop): m_serv(unix_path, loop, *this) {
+                                   http_router& router,
+                                   event_loop& loop): m_serv(unix_path, loop, *this),
+                                                      m_router(router) {
+}
+
+std::string_view get_default_conn_type(cppevent::HTTP_VERSION version) {
+    switch (version) {
+        case cppevent::HTTP_VERSION::HTTP_1_0:
+            return "close";
+        default:
+            return "keep-alive";
+    }
 }
 
 cppevent::task<> cppevent::http_server::on_connection(std::unique_ptr<socket> sock) {
@@ -61,16 +76,23 @@ cppevent::task<> cppevent::http_server::on_connection(std::unique_ptr<socket> so
         }
 
         http_body body { content_len, content_ended, *sock };
-        http_output output { *sock };
+        http_output res { *sock };
 
-        co_await output.end();
-        
-        std::string_view connection_sv;
-        if (req.get_version() == HTTP_VERSION::HTTP_1_0) {
-            req.get_header("connection").value_or("close");
+        std::unordered_map<std::string_view, std::string_view> path_params;
+        http_endpoint* endpoint = m_router.match(req.get_method(), req.get_path(), path_params);
+        req.set_path_params(path_params);
+
+        if (endpoint != nullptr) {
+            co_await endpoint->serve(req, body, res);
         } else {
-            req.get_header("connection").value_or("keep-alive");
+            res.set_status(HTTP_STATUS::NOT_FOUND);
+            res.set_content_length(0);
         }
+        
+        co_await res.end();
+        
+        std::string_view connection_sv =
+                req.get_header("connection").value_or(get_default_conn_type(req.get_version()));
         
         keep_conn = !(co_await body.has_incoming()) &&
                     find_case_insensitive(connection_sv, "keep-alive") != std::string_view::npos;
