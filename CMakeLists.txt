@@ -17,8 +17,8 @@ add_subdirectory(src)
 add_library(cppevent
   $<TARGET_OBJECTS:cppevent_base>
   $<TARGET_OBJECTS:cppevent_net>
-  $<TARGET_OBJECTS:cppevent_fcgi>
   $<TARGET_OBJECTS:cppevent_crypto>
+  $<TARGET_OBJECTS:cppevent_http>
   $<TARGET_OBJECTS:cppevent_postgres>
 )
 

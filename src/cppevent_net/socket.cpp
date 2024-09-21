@@ -28,21 +28,30 @@ void cppevent::socket::shutdown() {
     throw_if_error(status, "Failed to shutdown socket fd: ");
 }
 
-cppevent::awaitable_task<cppevent::e_status> cppevent::socket::recv_incoming() {
-    io_chunk chunk = m_in_buffer.get_write_chunk();
-    e_status status = co_await m_read_listener->on_recv(chunk.m_ptr, chunk.m_size, 0);
+cppevent::task<cppevent::e_status> cppevent::socket::recv_incoming() {
+    std::span<std::byte> chunk = m_in_buffer.get_write_chunk();
+    e_status status = co_await m_read_listener->on_recv(chunk.data(), chunk.size(), 0);
     if (status > 0) m_in_buffer.increment_write_p(status);
     co_return status;
 }
 
-cppevent::awaitable_task<cppevent::e_status> cppevent::socket::send_outgoing() {
-    io_chunk chunk = m_out_buffer.get_read_chunk();
-    e_status status = co_await m_write_listener->on_send(chunk.m_ptr, chunk.m_size, MSG_NOSIGNAL);
-    if (status > 0) m_out_buffer.increment_read_p(status);
-    co_return status;
+cppevent::task<std::span<std::byte>> cppevent::socket::peek() {
+    std::span<std::byte> chunk = m_in_buffer.get_read_chunk();
+    if (chunk.size() == 0) {
+        e_status status = co_await recv_incoming();
+        if (status < 0) {
+            throw_error("socket peek failed: ", 0 - status);
+        }
+        chunk = m_in_buffer.get_read_chunk();
+    }
+    co_return chunk;
 }
 
-cppevent::awaitable_task<long> cppevent::socket::read(void* dest, long size, bool read_fully) {
+void cppevent::socket::seek(long offset) {
+    m_in_buffer.increment_read_p(offset);
+}
+
+cppevent::task<long> cppevent::socket::read(void* dest, long size, bool read_fully) {
     std::byte* dest_p = static_cast<std::byte*>(dest);
     long total;
 
@@ -65,7 +74,7 @@ cppevent::awaitable_task<long> cppevent::socket::read(void* dest, long size, boo
 
 
 
-cppevent::awaitable_task<long> cppevent::socket::read(std::string& dest, long size, bool read_fully) {
+cppevent::task<long> cppevent::socket::read(std::string& dest, long size, bool read_fully) {
     e_status status = 0;
     long total;
 
@@ -86,7 +95,7 @@ cppevent::awaitable_task<long> cppevent::socket::read(std::string& dest, long si
     co_return total;
 }
 
-cppevent::awaitable_task<int> cppevent::socket::read_c(bool read_fully) {
+cppevent::task<int> cppevent::socket::read_c(bool read_fully) {
     if (m_in_buffer.available() == 0) {
         e_status status = co_await recv_incoming();
         if (status < 0) {
@@ -105,7 +114,7 @@ long skip_buffer(cppevent::byte_buffer<BUFFER_SIZE>& buf, long size) {
     return to_skip;
 }
 
-cppevent::awaitable_task<long> cppevent::socket::skip(long size, bool skip_fully) {
+cppevent::task<long> cppevent::socket::skip(long size, bool skip_fully) {
     e_status status = 0;
     long total;
 
@@ -126,25 +135,26 @@ cppevent::awaitable_task<long> cppevent::socket::skip(long size, bool skip_fully
     co_return total;
 }
 
-cppevent::awaitable_task<void> cppevent::socket::write(const void* src, long size) {
+cppevent::task<> cppevent::socket::write(const void* src, long size) {
     const std::byte* src_p = static_cast<const std::byte*>(src);
     long total;
 
     for (total = m_out_buffer.write(src_p, size);
          total < size;
          total += m_out_buffer.write(src_p + total, size - total)) {
-        e_status status = co_await send_outgoing();
-        if (status < 0) {
-            throw_error("socket write failed: ", 0 - status);
-        }
+        co_await flush();
     }
 }
 
-cppevent::awaitable_task<void> cppevent::socket::flush() {
-    while (m_out_buffer.available() > 0) {
-        e_status status = co_await send_outgoing();
+cppevent::task<> cppevent::socket::flush() {
+    for (std::span<std::byte> chunk = m_out_buffer.get_read_chunk();
+         !chunk.empty();
+         chunk = m_out_buffer.get_read_chunk()) {
+        e_status status =
+                co_await m_write_listener->on_send(chunk.data(), chunk.size(), MSG_NOSIGNAL);
         if (status < 0) {
             throw_error("socket flush failed: ", 0 - status);
         }
+        m_out_buffer.increment_read_p(status);
     }
 }

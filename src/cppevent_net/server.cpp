@@ -19,7 +19,7 @@ cppevent::server::server(const char* unix_path,
     accept_connections();
 }
 
-cppevent::task cppevent::server::accept_connections() {
+cppevent::task<> cppevent::server::accept_connections() {
     while (true) {
         m_handler.on_connection(co_await m_socket.accept());
     }

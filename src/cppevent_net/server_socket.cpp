@@ -64,7 +64,7 @@ cppevent::server_socket::~server_socket() {
     throw_if_error(status, "server_socket close failed: ");
 }
 
-cppevent::awaitable_task<std::unique_ptr<cppevent::socket>> cppevent::server_socket::accept() {
+cppevent::task<std::unique_ptr<cppevent::socket>> cppevent::server_socket::accept() {
     sockaddr_storage client_addr {};
     socklen_t client_addr_len = 0;
 

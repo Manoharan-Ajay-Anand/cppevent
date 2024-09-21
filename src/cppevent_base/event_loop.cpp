@@ -66,7 +66,7 @@ void cppevent::event_loop::notify_events() {
     }
 }
 
-cppevent::awaitable_task<void> cppevent::event_loop::run_internal_loop() {
+cppevent::task<> cppevent::event_loop::run_internal_loop() {
     std::unique_ptr<io_listener> listener = get_io_listener(m_event_fd);
     uint64_t count;
     while (m_running) {
@@ -82,7 +82,7 @@ cppevent::awaitable_task<void> cppevent::event_loop::run_internal_loop() {
 }
 
 void cppevent::event_loop::run() {
-    awaitable_task<void> t = run_internal_loop();
+    task<> t = run_internal_loop();
     while (m_running) {
         e_event ev = m_io_service.poll();
         m_event_bus.notify(ev.m_id, ev.m_status);

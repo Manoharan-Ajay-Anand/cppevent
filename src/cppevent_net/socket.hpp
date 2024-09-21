@@ -24,8 +24,7 @@ private:
     byte_buffer<SOCKET_BUFFER_SIZE> m_in_buffer;
     byte_buffer<SOCKET_BUFFER_SIZE> m_out_buffer;
 
-    awaitable_task<e_status> recv_incoming();
-    awaitable_task<e_status> send_outgoing();
+    task<e_status> recv_incoming();
 public:
     socket(int fd, std::unique_ptr<io_listener>&& read_l,
            std::unique_ptr<io_listener>&& write_l);
@@ -34,13 +33,16 @@ public:
 
     void shutdown();
 
-    awaitable_task<long> read(void* dest, long size, bool read_fully);
-    awaitable_task<long> read(std::string& dest, long size, bool read_fully);
-    awaitable_task<int> read_c(bool read_fully);
-    awaitable_task<long> skip(long size, bool skip_fully);
+    task<std::span<std::byte>> peek();
+    void seek(long offset);
 
-    awaitable_task<void> write(const void* src, long size);
-    awaitable_task<void> flush();
+    task<long> read(void* dest, long size, bool read_fully);
+    task<long> read(std::string& dest, long size, bool read_fully);
+    task<int> read_c(bool read_fully);
+    task<long> skip(long size, bool skip_fully);
+
+    task<> write(const void* src, long size);
+    task<> flush();
 };
 
 }

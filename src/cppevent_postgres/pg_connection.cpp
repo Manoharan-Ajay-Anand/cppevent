@@ -65,7 +65,7 @@ cppevent::pg_connection& cppevent::pg_connection::operator=(pg_connection&& othe
     return *this;
 }
 
-cppevent::awaitable_task<cppevent::response_info>
+cppevent::task<cppevent::response_info>
         cppevent::pg_connection::get_response_info(bool ignore_notice) {
     uint8_t res_header[HEADER_SIZE];
     response_type type;
@@ -84,7 +84,7 @@ cppevent::awaitable_task<cppevent::response_info>
 
 constexpr long CLIENT_NONCE_OCTETS = 24;
 
-cppevent::awaitable_task<void> cppevent::pg_connection::handle_auth(response_info info,
+cppevent::task<> cppevent::pg_connection::handle_auth(response_info info,
                                                                     const pg_config& config,
                                                                     scram& scr) {
     uint8_t type_data[INT_32_OCTETS];
@@ -156,7 +156,7 @@ cppevent::awaitable_task<void> cppevent::pg_connection::handle_auth(response_inf
     }
 }
 
-cppevent::awaitable_task<void> cppevent::pg_connection::init(const pg_config& config,
+cppevent::task<> cppevent::pg_connection::init(const pg_config& config,
                                                              crypto& crypt) {
     std::string message;
     message.append(STARTUP_PARAM_USER, sizeof(STARTUP_PARAM_USER));
@@ -205,7 +205,7 @@ cppevent::awaitable_task<void> cppevent::pg_connection::init(const pg_config& co
     }
 }
 
-cppevent::awaitable_task<void> cppevent::pg_connection::populate_result(response_info info,
+cppevent::task<> cppevent::pg_connection::populate_result(response_info info,
                                                                         pg_result& result) {
     switch (info.m_type) {
         case response_type::ROW_DESCRIPTION: {
@@ -250,7 +250,7 @@ cppevent::awaitable_task<void> cppevent::pg_connection::populate_result(response
     }
 }
 
-cppevent::awaitable_task<std::vector<cppevent::pg_result>> 
+cppevent::task<std::vector<cppevent::pg_result>> 
         cppevent::pg_connection::query(const std::string& q) {
     if (!m_query_ready) {
         throw std::runtime_error("pg_connection query_simple: Not query ready");
@@ -302,7 +302,7 @@ cppevent::awaitable_task<std::vector<cppevent::pg_result>>
 
 constexpr std::array<uint8_t, INT_16_OCTETS> NULL_ARR = { 0, 0 };
 
-cppevent::awaitable_task<void> cppevent::pg_connection::prepare_query(const std::string& q,
+cppevent::task<> cppevent::pg_connection::prepare_query(const std::string& q,
                                                                       const pg_params& params) {
     if (!m_query_ready) {
         throw std::runtime_error("pg_connection query_extended: Not query ready");
@@ -331,7 +331,7 @@ cppevent::awaitable_task<void> cppevent::pg_connection::prepare_query(const std:
     m_query_ready = false;
 }
 
-cppevent::awaitable_task<cppevent::pg_result> cppevent::pg_connection::execute(long max_rows) {
+cppevent::task<cppevent::pg_result> cppevent::pg_connection::execute(long max_rows) {
     response_header exec_header;
     exec_header.set_type('E');
     exec_header.set_size(INT_32_OCTETS + 1);
@@ -383,7 +383,7 @@ cppevent::awaitable_task<cppevent::pg_result> cppevent::pg_connection::execute(l
     co_return std::move(result);
 }
 
-cppevent::awaitable_task<void> cppevent::pg_connection::close_sync() {
+cppevent::task<> cppevent::pg_connection::close_sync() {
     constexpr std::array<uint8_t, INT_32_OCTETS * 3> arr = { 
         static_cast<uint8_t>('C'), 0, 0, 0, 6,
         static_cast<uint8_t>('P'), 0,

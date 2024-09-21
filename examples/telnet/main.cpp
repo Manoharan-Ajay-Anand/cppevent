@@ -12,7 +12,7 @@
 
 constexpr long BUFFER_SIZE = 512;
 
-cppevent::awaitable_task<std::string> read_line(cppevent::socket& sock) {
+cppevent::task<std::string> read_line(cppevent::socket& sock) {
     std::string result;
     for (int i = co_await sock.read_c(true); i != '\n'; i = co_await sock.read_c(true)) {
         if (i != '\r') {
@@ -22,7 +22,7 @@ cppevent::awaitable_task<std::string> read_line(cppevent::socket& sock) {
     co_return result;
 }
 
-cppevent::awaitable_task<std::string> read_line(cppevent::io_listener& listener) {
+cppevent::task<std::string> read_line(cppevent::io_listener& listener) {
     std::string result;
     std::array<char, BUFFER_SIZE> buffer;
     bool newline = false;
@@ -41,7 +41,7 @@ cppevent::awaitable_task<std::string> read_line(cppevent::io_listener& listener)
     co_return result;
 }
 
-cppevent::awaitable_task<void> incoming_message(cppevent::socket& sock, cppevent::event_loop& loop) {
+cppevent::task<> incoming_message(cppevent::socket& sock, cppevent::event_loop& loop) {
     try {
         while (true) {
             std::string message = co_await read_line(sock);
@@ -53,7 +53,7 @@ cppevent::awaitable_task<void> incoming_message(cppevent::socket& sock, cppevent
     loop.stop();
 }
 
-cppevent::task start_client(const std::string& name,
+cppevent::task<> start_client(const std::string& name,
                             const std::string& service,
                             cppevent::event_loop& loop) {
     cppevent::client_socket client_sock { name.c_str(), service.c_str(), loop };

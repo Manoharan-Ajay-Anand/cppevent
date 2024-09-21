@@ -9,7 +9,7 @@
 
 class echo_handler : public cppevent::connection_handler {
 public:
-cppevent::task on_connection(std::unique_ptr<cppevent::socket> sock) {
+cppevent::task<> on_connection(std::unique_ptr<cppevent::socket> sock) {
     const std::string newline("\r\n");
     while (true) {
         std::string message;

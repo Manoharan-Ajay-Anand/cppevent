@@ -32,7 +32,7 @@ public:
     client_socket(client_socket&&) = delete;
     client_socket& operator=(client_socket&&) = delete;
 
-    awaitable_task<std::unique_ptr<socket>> connect() const;
+    task<std::unique_ptr<socket>> connect() const;
 };
 
 }

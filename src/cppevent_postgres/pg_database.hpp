@@ -28,7 +28,7 @@ public:
     pg_database(const char* name, const char* service, const pg_config& config, event_loop& loop);
     pg_database(const char* unix_path, const pg_config& config, event_loop& loop);
 
-    awaitable_task<pg_connection> get_connection();
+    task<pg_connection> get_connection();
     void release(pg_connection& conn);
 };
 

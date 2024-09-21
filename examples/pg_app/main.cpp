@@ -13,7 +13,7 @@ std::string make_car_table =
 
 std::string select_cars = "SELECT id, brand, model, year FROM cars WHERE brand=$1 AND year=$2;";
 
-cppevent::task connect_to_database(cppevent::pg_database& database) {
+cppevent::task<> connect_to_database(cppevent::pg_database& database) {
     cppevent::pg_connection conn = co_await database.get_connection();
     
     std::vector<cppevent::pg_result> results = co_await conn.query(make_car_table);

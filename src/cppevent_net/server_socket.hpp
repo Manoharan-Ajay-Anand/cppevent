@@ -24,7 +24,7 @@ public:
     server_socket(const char* unix_path, event_loop& loop);
     ~server_socket();
 
-    awaitable_task<std::unique_ptr<socket>> accept();
+    task<std::unique_ptr<socket>> accept();
 };
 
 }
