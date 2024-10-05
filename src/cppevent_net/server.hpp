@@ -23,6 +23,7 @@ class server {
 private:
     server_socket m_socket;
     connection_handler& m_handler;
+    task<> m_accept_task;
 
     task<> accept_connections();
 public:

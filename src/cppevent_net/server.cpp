@@ -8,19 +8,19 @@ cppevent::server::server(const char* name,
                          const char* service,
                          event_loop& loop,
                          connection_handler& handler): m_socket(name, service, loop), 
-                                                       m_handler(handler) {
-    accept_connections();
+                                                       m_handler(handler),
+                                                       m_accept_task(accept_connections()) {
 }
 
 cppevent::server::server(const char* unix_path,
                          event_loop& loop,
                          connection_handler& handler): m_socket(unix_path, loop), 
-                                                       m_handler(handler) {
-    accept_connections();
+                                                       m_handler(handler),
+                                                       m_accept_task(accept_connections()) {
 }
 
 cppevent::task<> cppevent::server::accept_connections() {
     while (true) {
-        m_handler.on_connection(co_await m_socket.accept());
+        m_handler.on_connection(co_await m_socket.accept()).unlink();
     }
 }

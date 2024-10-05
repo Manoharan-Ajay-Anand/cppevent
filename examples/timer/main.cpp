@@ -33,7 +33,7 @@ cppevent::task<> timed_coroutine(cppevent::event_loop& e_loop) {
 
 int main() {
     cppevent::event_loop e_loop;
-    timed_coroutine(e_loop);
+    cppevent::task<> t = timed_coroutine(e_loop);
     e_loop.run();
     return 0;
 }

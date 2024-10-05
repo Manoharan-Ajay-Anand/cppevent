@@ -30,7 +30,6 @@ struct task {
         std::optional<T> m_val_opt;
         std::exception_ptr m_exception;
 
-        bool m_linked = true;
         suspended_coro m_outer;
         
         task<T> get_return_object() {
@@ -40,7 +39,7 @@ struct task {
         std::suspend_never initial_suspend() { return {}; }
         
         final_awaiter final_suspend() noexcept { 
-            return { m_linked, m_outer };
+            return { true, m_outer };
         }
         
         void unhandled_exception() {
@@ -60,11 +59,7 @@ public:
     task(std::coroutine_handle<promise_type> handle): m_handle(handle) {}
 
     ~task() {
-        if (m_handle.done()) {
-            m_handle.destroy();
-        } else {
-            m_handle.promise().m_linked = false;
-        }
+        m_handle.destroy();
     }
 
     task(const task&) = delete;
@@ -117,15 +112,14 @@ struct task<> {
 
 private:
     std::coroutine_handle<promise_type> m_handle;
+    bool m_linked = true;
 
 public:
     task(std::coroutine_handle<promise_type> handle): m_handle(handle) {}
 
     ~task() {
-        if (m_handle.done()) {
+        if (m_linked) {
             m_handle.destroy();
-        } else {
-            m_handle.promise().m_linked = false;
         }
     }
 
@@ -150,6 +144,10 @@ public:
         }
     }
 
+    void unlink() {
+        m_handle.promise().m_linked = false;
+        m_linked = false;
+    }
 };
 
 }

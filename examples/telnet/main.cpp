@@ -80,7 +80,7 @@ int main() {
     std::string name, service;
     std::cout << "Enter hostname<space>port:" << std::endl;
     std::cin >> name >> service;
-    start_client(name, service, loop);
+    cppevent::task<> t = start_client(name, service, loop);
     loop.run();
     return 0;
 }

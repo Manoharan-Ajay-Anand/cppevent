@@ -43,7 +43,7 @@ int main() {
     cppevent::event_loop loop;
     cppevent::pg_config config { "sample", "password" };
     cppevent::pg_database database { "localhost", "5432", config, loop };
-    connect_to_database(database);
+    cppevent::task<> t = connect_to_database(database);
     loop.run();
     return 0;
 }
