@@ -28,6 +28,7 @@ private:
     header_map m_headers;
 
     void process_uri(std::string_view uri);
+
 public:
     bool process_req_line(std::string_view line);
     bool process_header_line(std::string_view line);
@@ -44,6 +45,8 @@ public:
     std::vector<std::string_view> get_multi_query_param(std::string_view key) const;
 
     std::optional<std::string_view> get_header(std::string_view key) const;
+
+    bool is_close_conn() const;
 };
 
 }

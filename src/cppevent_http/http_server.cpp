@@ -31,15 +31,6 @@ cppevent::http_server::http_server(const char* unix_path,
                                                       m_router(router) {
 }
 
-std::string_view get_default_conn_type(cppevent::HTTP_VERSION version) {
-    switch (version) {
-        case cppevent::HTTP_VERSION::HTTP_1_0:
-            return "close";
-        default:
-            return "keep-alive";
-    }
-}
-
 cppevent::task<> cppevent::http_server::on_connection(std::unique_ptr<socket> sock) {
     bool keep_conn = true;
     while (keep_conn) {
@@ -91,11 +82,8 @@ cppevent::task<> cppevent::http_server::on_connection(std::unique_ptr<socket> so
         
         co_await res.end();
         
-        std::string_view connection_sv =
-                req.get_header("connection").value_or(get_default_conn_type(req.get_version()));
-        
         keep_conn = !(co_await body.has_incoming()) &&
-                    find_case_insensitive(connection_sv, "keep-alive") != std::string_view::npos;
+                    !req.is_close_conn();
     }
     sock->shutdown();
 }

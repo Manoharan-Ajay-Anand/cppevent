@@ -120,3 +120,19 @@ std::optional<std::string_view> cppevent::http_request::get_header(std::string_v
     }
     return { it->second };
 }
+
+std::string_view get_default_conn_type(cppevent::HTTP_VERSION version) {
+    switch (version) {
+        case cppevent::HTTP_VERSION::HTTP_1_0:
+            return "close";
+        default:
+            return "keep-alive";
+    }
+}
+
+bool cppevent::http_request::is_close_conn() const {
+    std::string_view connection_sv =
+            get_header("connection").value_or(get_default_conn_type(m_version));
+    
+    return find_case_insensitive(connection_sv, "keep-alive") == std::string_view::npos;
+}
