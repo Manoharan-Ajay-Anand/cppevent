@@ -11,10 +11,10 @@ class hello_endpoint : public cppevent::http_endpoint {
 public:
     cppevent::task<> serve(const cppevent::http_request&,
                            cppevent::http_body&, cppevent::http_output& res) {
-        res.set_status(cppevent::HTTP_STATUS::OK);
-        res.set_content_length(RES_MESSAGE.size());
-        res.set_header("content-type", "text/plain");
-        co_await res.write(RES_MESSAGE);
+        co_await res.status(cppevent::HTTP_STATUS::OK)
+                    .content_length(RES_MESSAGE.size())
+                    .header("content-type", "text/plain")
+                    .write(RES_MESSAGE);
     }
 };
 

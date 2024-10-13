@@ -18,26 +18,24 @@ private:
     socket& m_sock;
     HTTP_STATUS m_status = HTTP_STATUS::OK;
 
-    header_map m_headers;
-
-    bool m_headers_written = false;
-    bool m_chunked_encoding = false;
-
     task<> raw_write(const void* src, long size);
     task<> raw_write(std::string_view sv);
 
-    task<> write_headers();
+    std::string m_headers_buf;
+    bool m_headers_written;
+
+    bool m_chunked_encoding = false;
+
 public:
     http_output(socket& sock);
 
-    void set_status(HTTP_STATUS status);
-    void set_header(std::string_view name, std::string_view value);
-    void set_content_length(long len);
+    http_output& status(HTTP_STATUS status);
+    http_output& header(std::string_view name, std::string_view value);
+    http_output& content_length(long len);
+    http_output& chunked();
 
     task<> write(const void* src, long size);
     task<> write(std::string_view sv);
-
-    task<> end();
 };
 
 }

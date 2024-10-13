@@ -76,11 +76,10 @@ cppevent::task<> cppevent::http_server::on_connection(std::unique_ptr<socket> so
         if (endpoint != nullptr) {
             co_await endpoint->serve(req, body, res);
         } else {
-            res.set_status(HTTP_STATUS::NOT_FOUND);
-            res.set_content_length(0);
+            co_await res.status(HTTP_STATUS::NOT_FOUND)
+                        .content_length(0)
+                        .write("");
         }
-        
-        co_await res.end();
         
         keep_conn = !(co_await body.has_incoming()) &&
                     !req.is_close_conn();
