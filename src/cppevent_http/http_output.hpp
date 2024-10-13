@@ -22,9 +22,7 @@ private:
     task<> raw_write(std::string_view sv);
 
     std::string m_headers_buf;
-    bool m_headers_written;
-
-    bool m_chunked_encoding = false;
+    bool m_headers_written = false;
 
 public:
     http_output(socket& sock);
@@ -32,7 +30,6 @@ public:
     http_output& status(HTTP_STATUS status);
     http_output& header(std::string_view name, std::string_view value);
     http_output& content_length(long len);
-    http_output& chunked();
 
     task<> write(const void* src, long size);
     task<> write(std::string_view sv);
