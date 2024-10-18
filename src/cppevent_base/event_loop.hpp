@@ -6,15 +6,11 @@
 #include "io_listener.hpp"
 #include "io_service.hpp"
 
-#include <queue>
-
 namespace cppevent {
 
 class event_loop {
 private:
     bool m_running = true;
-
-    std::queue<e_event> m_events;
     
     event_bus m_event_bus;
     io_service m_io_service;

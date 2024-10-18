@@ -1,11 +1,12 @@
 #ifndef CPPEVENT_BASE_IO_SERVICE_HPP
 #define CPPEVENT_BASE_IO_SERVICE_HPP
 
+#include "types.hpp"
+
 #include <liburing.h>
 
 #include <memory>
-
-#include "types.hpp"
+#include <queue>
 
 namespace cppevent {
 
@@ -15,14 +16,20 @@ class io_listener;
 
 class io_service {
 private:
-    io_uring m_ring;
+    ::io_uring m_ring;
+    int m_event_fd;
+
+    std::queue<e_event> m_events;
 public:
     io_service();
     ~io_service();
 
     std::unique_ptr<io_listener> get_listener(int fd, event_bus& bus);
 
-    e_event poll();
+    void interrupt();
+    void add_event(e_event ev);
+
+    std::queue<e_event> poll_events();
 };
 
 }

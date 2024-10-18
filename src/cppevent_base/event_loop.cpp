@@ -7,9 +7,6 @@
 #include <array>
 #include <queue>
 
-#include <sys/eventfd.h>
-#include <unistd.h>
-
 std::unique_ptr<cppevent::io_listener> cppevent::event_loop::get_io_listener(int fd) {
     return m_io_service.get_listener(fd, m_event_bus);
 }
@@ -19,21 +16,21 @@ cppevent::event_callback cppevent::event_loop::get_event_callback() {
 }
 
 void cppevent::event_loop::add_event(e_event ev) {
-    m_events.push(ev);
+    m_io_service.add_event(ev);
 }
 
 void cppevent::event_loop::run() {
     while (m_running) {
-        if (!m_events.empty()) {
-            auto event = m_events.front();
-            m_events.pop();
-            m_event_bus.notify(event.m_id, event.m_status);
-            continue;
+        std::queue<e_event> events = m_io_service.poll_events();
+        while (m_running && !events.empty()) {
+            e_event ev = events.front();
+            events.pop();
+            m_event_bus.notify(ev.m_id, ev.m_status);
         }
-        add_event(m_io_service.poll());
     }
 }
 
 void cppevent::event_loop::stop() {
     m_running = false;
+    m_io_service.interrupt();
 }
