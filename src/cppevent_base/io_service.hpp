@@ -17,7 +17,7 @@ class io_listener;
 class io_service {
 private:
     ::io_uring m_ring;
-    int m_event_fd;
+    int m_evfd;
 
     std::queue<e_event> m_events;
 public:
