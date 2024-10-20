@@ -11,13 +11,13 @@ cppevent::task<> multiply_num(int& num, cppevent::event_callback& cb) {
     num *= co_await cb.await_status();
 }
 
-TEST_CASE("awaiters test") {
+TEST_CASE("event test") {
     cppevent::event_bus bus;
-    cppevent::event_callback cb { bus };
+    cppevent::event_callback cb = bus.get_event_callback();
 
     SUBCASE("trigger event") {
         int num = SAMPLE_NUM;
-        multiply_num(num, cb);
+        auto t = multiply_num(num, cb);
         CHECK(num == SAMPLE_NUM);
         bus.notify(cb.get_id(), MULTIPLIER);
         CHECK(num == SAMPLE_NUM * MULTIPLIER);

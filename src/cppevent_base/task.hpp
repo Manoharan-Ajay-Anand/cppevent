@@ -1,8 +1,6 @@
 #ifndef CPPEVENT_BASE_TASK_HPP
 #define CPPEVENT_BASE_TASK_HPP
 
-#include "suspended_coro.hpp"
-
 #include <optional>
 #include <coroutine>
 #include <exception>
@@ -11,14 +9,14 @@ namespace cppevent {
 
 struct final_awaiter {
     bool m_linked;
-    suspended_coro& m_outer;
+    std::coroutine_handle<> m_outer;
 
     bool await_ready() noexcept {
         return !m_linked;
     }
 
     std::coroutine_handle<> await_suspend(std::coroutine_handle<> handle) noexcept {
-        return m_outer.retrieve_handle();
+        return m_outer;
     }
 
     void await_resume() noexcept {}
@@ -30,7 +28,7 @@ struct task {
         std::optional<T> m_val_opt;
         std::exception_ptr m_exception;
 
-        suspended_coro m_outer;
+        std::coroutine_handle<> m_outer = std::noop_coroutine();
         
         task<T> get_return_object() {
             return { std::coroutine_handle<promise_type>::from_promise(*this) };
@@ -73,7 +71,7 @@ public:
     }
     
     void await_suspend(std::coroutine_handle<> handle) {
-        m_handle.promise().m_outer.store_handle(handle);
+        m_handle.promise().m_outer = handle;
     }
     
     T&& await_resume() {
@@ -91,7 +89,7 @@ struct task<> {
         std::exception_ptr m_exception;
 
         bool m_linked = true;
-        suspended_coro m_outer;
+        std::coroutine_handle<> m_outer = std::noop_coroutine();
         
         task<> get_return_object() {
             return { std::coroutine_handle<promise_type>::from_promise(*this) };
@@ -134,7 +132,7 @@ public:
     }
     
     void await_suspend(std::coroutine_handle<> handle) {
-        m_handle.promise().m_outer.store_handle(handle);
+        m_handle.promise().m_outer = handle;
     }
     
     void await_resume() {

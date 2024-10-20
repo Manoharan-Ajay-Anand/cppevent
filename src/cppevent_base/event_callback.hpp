@@ -3,24 +3,20 @@
 
 #include "types.hpp"
 #include "status_awaiter.hpp"
-#include "suspended_coro.hpp"
 
 #include <optional>
 #include <coroutine>
 
 namespace cppevent {
 
-class event_bus;
+class status_store;
 
 class event_callback {
 private:
-    e_id m_id;
-    event_bus& m_bus;
+    status_store* m_store;
 
-    std::optional<e_status> m_status_opt;
-    suspended_coro m_suspended;
 public:
-    event_callback(event_bus& bus);
+    event_callback(status_store* store);
     ~event_callback();
 
     event_callback(const event_callback&) = delete;
@@ -30,13 +26,6 @@ public:
     event_callback& operator=(event_callback&&) = delete;
 
     e_id get_id() const;
-
-    void set_handle(std::coroutine_handle<> handle);
-    void notify(e_status status);
-
-    bool has_status() const;
-    e_status get_status();
-    void reset();
 
     status_awaiter await_status();
 };

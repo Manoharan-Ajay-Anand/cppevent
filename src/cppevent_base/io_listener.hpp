@@ -12,6 +12,8 @@ struct io_uring_sqe;
 
 namespace cppevent {
 
+class event_bus;
+
 class io_listener {
 private:
     event_callback m_callback;

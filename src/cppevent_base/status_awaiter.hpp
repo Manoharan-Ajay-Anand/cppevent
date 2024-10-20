@@ -8,14 +8,14 @@
 
 namespace cppevent {
 
-class event_callback;
+class status_store;
 
 class status_awaiter {
 private:
-    event_callback* m_callback;
+    status_store* m_store;
 
 public:
-    status_awaiter(event_callback* callback);
+    status_awaiter(status_store* store);
     ~status_awaiter();
 
     status_awaiter(const status_awaiter&) = delete;

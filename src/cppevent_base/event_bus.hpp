@@ -1,22 +1,21 @@
 #ifndef CPPEVENT_BASE_EVENT_BUS_HPP
 #define CPPEVENT_BASE_EVENT_BUS_HPP
 
-#include "types.hpp"
+#include "status_store.hpp"
+#include "event_callback.hpp"
 
-#include <unordered_map>
+#include <queue>
+#include <memory>
 
 namespace cppevent {
 
-class event_callback;
-
 class event_bus {
 private:
-    e_id m_id_counter = 0;
-    std::unordered_map<e_id, event_callback*> m_callbacks;
+    std::queue<status_store*> m_released;
+    std::vector<std::unique_ptr<status_store>> m_stores;
 
 public:
-    e_id register_event_callback(event_callback* callback);
-    void deregister_event_callback(e_id id);
+    event_callback get_event_callback();
     
     void notify(e_id id, e_status status);
 };

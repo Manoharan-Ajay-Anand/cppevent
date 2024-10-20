@@ -12,7 +12,7 @@ std::unique_ptr<cppevent::io_listener> cppevent::event_loop::get_io_listener(int
 }
 
 cppevent::event_callback cppevent::event_loop::get_event_callback() {
-    return event_callback { m_event_bus };
+    return m_event_bus.get_event_callback();
 }
 
 void cppevent::event_loop::add_event(e_event ev) {
