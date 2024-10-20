@@ -23,14 +23,27 @@ TEST_CASE("event test") {
         CHECK(num == SAMPLE_NUM * MULTIPLIER);
     }
 
-    SUBCASE("e_id not equal") {
+    SUBCASE("e_id index not equal") {
         int num = SAMPLE_NUM;
+
+        cppevent::event_callback cb1 = bus.get_event_callback();
+        cppevent::event_callback cb2 = bus.get_event_callback();
+
+        cppevent::e_id i1 = cb1.get_id();
+        cppevent::e_id i2 = cb2.get_id();
+
+        CHECK(i1.m_index < i2.m_index);
+        CHECK(i1.m_counter == i2.m_counter);
+        CHECK(i1 != i2);
+    }
+
+    SUBCASE("e_id counter not equal") {
         cppevent::e_id i1 = bus.get_event_callback().get_id();
         cppevent::e_id i2 = bus.get_event_callback().get_id();
 
         CHECK(i1.m_index == i2.m_index);
-        CHECK(i2.m_counter > i1.m_counter);
-        CHECK(i1 != bus.get_event_callback().get_id());
+        CHECK(i1.m_counter < i2.m_counter);
+        CHECK(i1 != i2);
     }
 
 }
