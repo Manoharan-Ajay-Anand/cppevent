@@ -8,5 +8,6 @@ add_library(cppevent_base OBJECT
   status_awaiter.cpp
   status_store.cpp
   timer.cpp
+  types.cpp
   util.cpp
 )

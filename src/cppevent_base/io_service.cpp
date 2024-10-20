@@ -53,7 +53,7 @@ std::queue<cppevent::e_event> cppevent::io_service::poll_events() {
 
     ::io_uring_cqe* cqe;
     while (::io_uring_peek_cqe(&m_ring, &cqe) == 0) {
-        e_event ev = { ::io_uring_cqe_get_data64(cqe), cqe->res };
+        e_event ev = { e_id { ::io_uring_cqe_get_data64(cqe) }, cqe->res };
         ::io_uring_cqe_seen(&m_ring, cqe);
         
         result.push(ev);

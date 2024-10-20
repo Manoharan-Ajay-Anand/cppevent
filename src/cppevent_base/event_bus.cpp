@@ -7,7 +7,8 @@
 cppevent::event_callback cppevent::event_bus::get_event_callback() {
     status_store* store =  nullptr;
     if (m_released.empty()) {
-        auto ptr = std::make_unique<status_store>(m_stores.size() + 1, m_released);
+        e_id id { static_cast<uint32_t>(m_stores.size()), 0 };
+        auto ptr = std::make_unique<status_store>(id, m_released);
         store = ptr.get();
         m_stores.push_back(std::move(ptr));    
     } else {
@@ -19,5 +20,8 @@ cppevent::event_callback cppevent::event_bus::get_event_callback() {
 }
 
 void cppevent::event_bus::notify(e_id id, e_status status) {
-    m_stores.at(id - 1)->notify(status);
+    auto& store = m_stores[id.m_index];
+    if (store->get_id() == id) {
+        store->notify(status);
+    }
 }

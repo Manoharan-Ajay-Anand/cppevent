@@ -14,7 +14,7 @@ cppevent::io_listener::io_listener(event_bus& bus,
 
 io_uring_sqe* cppevent::io_listener::get_sqe() {
     io_uring_sqe* sqe = io_uring_get_sqe(m_ring);
-    io_uring_sqe_set_data64(sqe, m_callback.get_id());
+    io_uring_sqe_set_data64(sqe, static_cast<uint64_t>(m_callback.get_id()));
     return sqe;
 }
 

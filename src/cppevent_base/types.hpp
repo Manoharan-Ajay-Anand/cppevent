@@ -6,7 +6,19 @@
 
 namespace cppevent {
 
-using e_id = uint64_t;
+struct e_id {
+    uint32_t m_index = 0;
+    uint32_t m_counter = 0;
+
+    e_id() = default;
+    
+    e_id(uint32_t index, uint32_t counter);
+    explicit e_id(uint64_t val);
+
+    explicit operator uint64_t() const;
+
+    bool operator==(const e_id&) const = default;
+};
 
 using e_status = int64_t;
 

@@ -37,5 +37,6 @@ void cppevent::status_store::reset() {
 
 void cppevent::status_store::release() {
     reset();
+    ++m_id.m_counter;
     m_released.push(this);
 }
