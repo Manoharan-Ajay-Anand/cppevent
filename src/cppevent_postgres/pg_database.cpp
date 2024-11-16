@@ -25,9 +25,9 @@ cppevent::task<cppevent::pg_connection> cppevent::pg_database::get_connection() 
     }
 
     if (m_idle.empty()) {
-        event_callback callback = m_loop.get_event_callback();
-        m_waiting.push(callback.get_id());
-        co_await callback.await_status();
+        async_signal signal { m_loop };
+        m_waiting.push(signal.get_trigger());
+        co_await signal.await_signal();
     }
     pg_connection conn = std::move(m_idle.front());
     m_idle.pop();
@@ -37,8 +37,8 @@ cppevent::task<cppevent::pg_connection> cppevent::pg_database::get_connection() 
 void cppevent::pg_database::release(pg_connection& conn) {
     m_idle.push(std::move(conn));
     if (!m_waiting.empty()) {
-        e_id id = m_waiting.front();
+        signal_trigger trigger = m_waiting.front();
         m_waiting.pop();
-        m_loop.add_event({ id, 0 });
+        trigger.notify();
     }
 }

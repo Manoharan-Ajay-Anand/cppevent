@@ -8,17 +8,22 @@
 
 namespace cppevent {
 
-struct signal_trigger {
-    const e_id m_id;
-    event_loop* const m_loop;
+class signal_trigger {
+private:
+    e_id m_id;
+    event_loop* m_loop = nullptr;
 
-    void activate() const;
+public:
+    signal_trigger() = default;
+    signal_trigger(e_id id, event_loop* loop);
+
+    void notify() const;
 };
 
 class async_signal {
 private:
-    event_callback m_callback;
     event_loop& m_loop;
+    event_callback m_callback;
 
 public:
     async_signal(event_loop& loop);

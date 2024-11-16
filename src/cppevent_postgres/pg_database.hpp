@@ -5,7 +5,8 @@
 #include "pg_connection.hpp"
 
 #include <cppevent_base/task.hpp>
-#include <cppevent_base/types.hpp>
+#include <cppevent_base/async_signal.hpp>
+
 #include <cppevent_net/client_socket.hpp>
 #include <cppevent_crypto/crypto.hpp>
 
@@ -23,7 +24,7 @@ private:
 
     long m_conn_count = 0;
     std::queue<pg_connection> m_idle;
-    std::queue<e_id> m_waiting;
+    std::queue<signal_trigger> m_waiting;
 public:
     pg_database(const char* name, const char* service, const pg_config& config, event_loop& loop);
     pg_database(const char* unix_path, const pg_config& config, event_loop& loop);
