@@ -13,13 +13,16 @@ std::string make_car_table =
 
 std::string select_cars = "SELECT id, brand, model, year FROM cars WHERE brand=$1 AND year=$2;";
 
-cppevent::task<> connect_to_database(cppevent::pg_database& database) {
+cppevent::task<> connect_to_database(cppevent::event_loop& loop, cppevent::pg_database& database) {
     cppevent::pg_connection conn = co_await database.get_connection();
     
+    std::cout << "========= Creating and Populating table =========\n" << std::endl;
     std::vector<cppevent::pg_result> results = co_await conn.query(make_car_table);
     std::cout << results[0].get_command_tag() << '\n'
               << results[1].get_command_tag() << std::endl;
     
+    std::cout << "\n========= Selecting Rows =========\n" << std::endl;
+
     cppevent::pg_params params;
     params.store(std::string { "MB" }, 2023);
 
@@ -37,13 +40,16 @@ cppevent::task<> connect_to_database(cppevent::pg_database& database) {
     } while (type == cppevent::result_type::SUSPENDED);
 
     database.release(conn);
+
+    std::cout << "\n========================" << std::endl;
+    loop.stop();
 }
 
 int main() {
     cppevent::event_loop loop;
     cppevent::pg_config config { "sample", "password" };
     cppevent::pg_database database { "localhost", "5432", config, loop };
-    cppevent::task<> t = connect_to_database(database);
+    cppevent::task<> t = connect_to_database(loop, database);
     loop.run();
     return 0;
 }
