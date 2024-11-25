@@ -23,6 +23,8 @@ public:
     task<long> read(void* dest, long size);
     task<long> read(std::string& dest, long size);
     task<long> skip(long size);
+
+    task<void> await_conn_close();
 };
 
 }

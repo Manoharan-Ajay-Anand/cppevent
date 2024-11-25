@@ -85,3 +85,8 @@ cppevent::task<long> cppevent::http_body::skip(long size) {
 
     co_return total_skipped;
 }
+
+cppevent::task<void> cppevent::http_body::await_conn_close() {
+    co_await skip(LONG_MAX);
+    co_await m_sock.peek();
+}
