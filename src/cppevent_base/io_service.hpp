@@ -2,6 +2,7 @@
 #define CPPEVENT_BASE_IO_SERVICE_HPP
 
 #include "types.hpp"
+#include "spin_lock.hpp"
 
 #include <liburing.h>
 
@@ -20,6 +21,7 @@ private:
     int m_evfd;
 
     std::queue<e_event> m_events;
+    spin_lock m_spin;
 public:
     io_service();
     ~io_service();

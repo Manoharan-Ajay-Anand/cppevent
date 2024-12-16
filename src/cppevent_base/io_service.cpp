@@ -38,7 +38,10 @@ void cppevent::io_service::interrupt() {
 }
 
 void cppevent::io_service::add_event(e_event ev) {
-    m_events.push(ev);
+    {
+        auto g = m_spin.acquire();
+        m_events.push(ev);
+    }
     interrupt();
 }
 
@@ -49,7 +52,11 @@ std::queue<cppevent::e_event> cppevent::io_service::poll_events() {
     int status = ::eventfd_read(m_evfd, &evfd_val);
     throw_if_error(status, "Failed to read eventfd: ");
 
-    std::queue<cppevent::e_event> result = std::move(m_events);
+    std::queue<cppevent::e_event> result;
+    {
+        auto g = m_spin.acquire();
+        result = std::move(m_events);
+    }
 
     ::io_uring_cqe* cqe;
     while (::io_uring_peek_cqe(&m_ring, &cqe) == 0) {
